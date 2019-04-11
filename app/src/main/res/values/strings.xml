@@ -4,6 +4,7 @@
     <string name="ttsVolume">볼륨크기</string>
     <string name="ttsTone">톤</string>
     <string name="setting">설정</string>
+    <string name="ttsEngine">TTS 엔진</string>
     <string name="large_text">
         "Material is the metaphor.\n\n"
 

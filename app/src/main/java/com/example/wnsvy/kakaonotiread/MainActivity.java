@@ -20,10 +20,16 @@ import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.SeekBar;
+import android.widget.Spinner;
 
 import com.example.wnsvy.kakaonotiread.Common.CommonApplication;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static android.speech.tts.TextToSpeech.Engine.KEY_PARAM_VOLUME;
 
@@ -33,6 +39,7 @@ public class MainActivity extends AppCompatActivity {
     public SeekBar ttsSpeechRate;
     public SeekBar ttsVolume;
     public SeekBar ttsTone;
+    public Spinner spinner;
     private CommonApplication commonApplication;
     private TextToSpeech textToSpeech;
     public SharedPreferences sharedPreferences;
@@ -66,6 +73,10 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     };
+    public  List<TextToSpeech.EngineInfo> engineInfoList;
+    public List<String > listInstalledEnginesPackage;
+    public List<String> listInstalledEnginesName;
+    public int ttsEngineNum;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,9 +87,8 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         initView();
-        loadBackDrop();
-        commonApplication = CommonApplication.getInstance();
-        textToSpeech = commonApplication.getTextToSpeech();
+
+        textToSpeech = CommonApplication.getInstance().getTextToSpeech();
 
         // TTS 읽기 기능 미디어플레이어 재생시 중지 및 재시작 처리
         textToSpeech.setOnUtteranceProgressListener(new UtteranceProgressListener() {
@@ -102,8 +112,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
+        floatingActionButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Snackbar.make(view, "읽기 서비스 시작", Snackbar.LENGTH_LONG).setAction("", null).show();
@@ -111,18 +120,23 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        setSeekBar(ttsSpeechRate);
-        setSeekBar(ttsTone);
-        setSeekBar(ttsVolume);
-
         sharedPreferences = getSharedPreferences("tts",MODE_PRIVATE );
         int ttsSpeechRateValue = sharedPreferences.getInt("ttsSpeechRate", 0);
         int ttsToneValue = sharedPreferences.getInt("ttsTone", 0);
-        int ttsVolumeValue = sharedPreferences.getInt("ttsVolume", 0);
+        String defaultEngine = sharedPreferences.getString("ttsEngine","");
+        ttsEngineNum = sharedPreferences.getInt("ttsEngineNum",0);
+
         if(ttsSpeechRateValue != 0 || ttsToneValue != 0 || sharedPreferences != null) {
             ttsSpeechRate.setProgress(ttsSpeechRateValue);
             ttsTone.setProgress(ttsToneValue);
+            textToSpeech.setPitch(ttsToneValue * 0.1f);
+            textToSpeech.setSpeechRate(ttsSpeechRateValue * 0.1f);
+            textToSpeech.setEngineByPackageName(defaultEngine);
         }
+        setSeekBar(ttsSpeechRate);
+        setSeekBar(ttsTone);
+        setSeekBar(ttsVolume);
+        setTTSEngine();
     }
 
     public void initView(){
@@ -137,6 +151,39 @@ public class MainActivity extends AppCompatActivity {
         ttsVolume.setProgress(curVolume);
         ttsTone.setMax(20);
         floatingActionButton = findViewById(R.id.fab);
+        spinner = findViewById(R.id.spinner);
+        setCollapsingToolbarLayout();
+    }
+
+    public void setTTSEngine(){
+        engineInfoList = textToSpeech.getEngines(); // 설치된 TTS 엔진 목록 리스트
+        listInstalledEnginesPackage = new ArrayList<>(); // TTS 엔진 패키지명 리스트
+        listInstalledEnginesName = new ArrayList<>(); // TTS 엔진 이름 리스트
+        for(int i=0; i<engineInfoList.size(); i++){
+            listInstalledEnginesName.add(engineInfoList.get(i).label);
+            listInstalledEnginesPackage.add(engineInfoList.get(i).name);
+        }
+        ArrayAdapter arrayAdapter = new ArrayAdapter(this,android.R.layout.simple_spinner_item , listInstalledEnginesName);
+        arrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+        spinner.setAdapter(arrayAdapter);
+        spinner.setSelection(ttsEngineNum,false); // 리스너 이전에 setSelection()을 호출해야 이전에 선택한 값을 저장하여 스피너상태 유지됨.
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                if(spinner.getSelectedItemPosition() >= 0){
+                    textToSpeech.setEngineByPackageName(listInstalledEnginesPackage.get(i)); // 선택한 패키지명의 TTS 엔진 적용
+                    sharedPreferences.edit().putString("ttsEngine", listInstalledEnginesPackage.get(i)).apply();
+                    sharedPreferences.edit().putInt("ttsEngineNum", i).apply();
+                    // 설정값 유지를 위한 sharedPreferences 세팅
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> adapterView) {
+
+            }
+        });
     }
 
     public float getConvertValue(int intVal){
@@ -156,7 +203,8 @@ public class MainActivity extends AppCompatActivity {
 
                     switch (seekBar.getId()) {
                         case R.id.ttsSpeechRate:
-                            commonApplication.setTextToSpeechRate(getConvertValue(progress));
+                            //commonApplication.setTextToSpeechRate(getConvertValue(progress));
+                            textToSpeech.setSpeechRate(getConvertValue(progress));
                             sharedPreferences.edit().putInt("ttsSpeechRate", progress).apply();
                             textToSpeech.speak("읽기 속도 값은" + progress + "입니다", TextToSpeech.QUEUE_FLUSH, ttsParam, "1");
                             Log.d("읽기속도", String.valueOf(getConvertValue(progress)));
@@ -168,7 +216,8 @@ public class MainActivity extends AppCompatActivity {
                             vol = progress;
                             break;
                         case R.id.ttsTone:
-                            commonApplication.setTextToSpeechPitch(getConvertValue(progress));
+                            //commonApplication.setTextToSpeechPitch(getConvertValue(progress));
+                            textToSpeech.setPitch(getConvertValue(progress));
                             sharedPreferences.edit().putInt("ttsTone", progress).apply();
                             textToSpeech.speak("읽기 톤 값은" + progress + "입니다", TextToSpeech.QUEUE_FLUSH, ttsParam, "1");
                             Log.d("읽기톤", String.valueOf(getConvertValue(progress)));
@@ -194,7 +243,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         if(textToSpeech != null){
-            textToSpeech.stop();
+           textToSpeech.stop();
         }
     }
 
@@ -206,7 +255,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void loadBackDrop(){
+    private void setCollapsingToolbarLayout(){
         final CollapsingToolbarLayout collapsingToolbarLayout = findViewById(R.id.toolbar_layout);
         collapsingToolbarLayout.setTitle("카톡 읽어주는 누나");
         collapsingToolbarLayout.setExpandedTitleTextColor(ColorStateList.valueOf(Color.BLACK));
