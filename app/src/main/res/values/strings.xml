@@ -1,5 +1,9 @@
 <resources>
-    <string name="app_name">KakaoNotiRead</string>
+    <string name="app_name">카톡 읽어주는 누나</string>
+    <string name="ttsSpeechRate">읽기속도</string>
+    <string name="ttsVolume">볼륨크기</string>
+    <string name="ttsTone">톤</string>
+    <string name="setting">설정</string>
     <string name="large_text">
         "Material is the metaphor.\n\n"
 
