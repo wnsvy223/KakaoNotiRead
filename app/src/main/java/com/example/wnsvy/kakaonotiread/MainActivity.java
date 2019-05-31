@@ -243,7 +243,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         if(textToSpeech != null){
-           textToSpeech.stop();
+           //textToSpeech.stop();
         }
     }
 
@@ -251,13 +251,13 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         if(textToSpeech != null){
-            textToSpeech.stop();
+            //textToSpeech.stop();
         }
     }
 
     private void setCollapsingToolbarLayout(){
         final CollapsingToolbarLayout collapsingToolbarLayout = findViewById(R.id.toolbar_layout);
-        collapsingToolbarLayout.setTitle("카톡 읽어주는 누나");
+        collapsingToolbarLayout.setTitle("설정");
         collapsingToolbarLayout.setExpandedTitleTextColor(ColorStateList.valueOf(Color.BLACK));
         final int myDrawable = R.drawable.kakao2;
         final ImageView imageView = findViewById(R.id.backImage);

@@ -10,6 +10,13 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.example.wnsvy.kakaonotiread.Common.CommonApplication;
+import com.example.wnsvy.kakaonotiread.Model.Users;
+
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Locale;
+
+import io.realm.Realm;
 
 import static android.speech.tts.TextToSpeech.Engine.KEY_PARAM_VOLUME;
 
@@ -44,6 +51,8 @@ public class KakaoPushListenerService extends NotificationListenerService {
             }
         }
     };
+    private Realm realm;
+
 
     @Override
     public void onCreate() {
@@ -71,7 +80,7 @@ public class KakaoPushListenerService extends NotificationListenerService {
 
             }
         });
-
+        realm = Realm.getDefaultInstance();
     }
 
     @Override
@@ -83,6 +92,7 @@ public class KakaoPushListenerService extends NotificationListenerService {
             textToSpeech.shutdown();
             textToSpeech = null;
         }
+        realm.close();
     }
 
     @Override
@@ -94,8 +104,11 @@ public class KakaoPushListenerService extends NotificationListenerService {
             Log.d(TAG, String.valueOf(sbn.getNotification().extras));
             Bundle kakaoPushData = sbn.getNotification().extras; // 노티로 넘어오는 푸시메시지 Bundle 데이터
 
-            String title =  kakaoPushData.getString("android.title"); // 카톡푸시메시지 방의 제목
-            String text = kakaoPushData.getString("android.text"); // 카톡푸시메시지 내용
+            final String title =  kakaoPushData.getString("android.title"); // 카톡푸시메시지 방의 제목
+            final String text = kakaoPushData.getString("android.text"); // 카톡푸시메시지 내용
+            Calendar calendar = Calendar.getInstance();
+            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.KOREA);
+            final  String timeStamp = simpleDateFormat.format(calendar.getTime());
 
             if(!TextUtils.isEmpty(title) && !TextUtils.isEmpty(text)) {
                 Bundle ttsParam = new Bundle();
@@ -103,6 +116,16 @@ public class KakaoPushListenerService extends NotificationListenerService {
 
                 textToSpeech.speak(title + "님으로부터 온 메시지는" + text + "입니다", TextToSpeech.QUEUE_FLUSH, ttsParam, "1");
                 //tts.speak(title + "님으로부터 온 메시지는" + text + "입니다", TextToSpeech.QUEUE_FLUSH, ttsParam, "1");
+
+                realm.executeTransaction(new Realm.Transaction() { // 푸시 메시지 날아오면 Realm DB에 값 넣음.
+                    @Override
+                    public void execute(Realm realm) {
+                        Users users = realm.createObject(Users.class);
+                        users.setUserId(title);
+                        users.setMessage(text);
+                        users.setTimeStamp(timeStamp);
+                    }
+                });
             }
             // 푸시 메시지 읽을때 음악, 동영상 재생 중지 기능 추가
 

@@ -3,6 +3,9 @@ package com.example.wnsvy.kakaonotiread.Common;
 import android.app.Application;
 import android.speech.tts.TextToSpeech;
 import java.util.Locale;
+
+import io.realm.Realm;
+
 import static android.speech.tts.TextToSpeech.ERROR;
 
 public class CommonApplication extends Application {
@@ -14,6 +17,7 @@ public class CommonApplication extends Application {
     public void onCreate() {
         super.onCreate();
 
+        Realm.init(this); // Realm 초기화
         appInstance = this;
         CommonApplication.textToSpeech = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
             @Override
@@ -47,4 +51,5 @@ public class CommonApplication extends Application {
     public void setTextToSpeechLocale(Locale locale) {
         textToSpeech.setLanguage(locale); // 언어
     }
+
 }

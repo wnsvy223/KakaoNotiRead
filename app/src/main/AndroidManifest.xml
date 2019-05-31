@@ -3,8 +3,8 @@
     package="com.example.wnsvy.kakaonotiread">
 
     <application
+        android:name=".Common.CommonApplication"
         android:allowBackup="true"
-        android:name = ".Common.CommonApplication"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -13,6 +13,19 @@
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name"
+            android:theme="@style/AppTheme.NoActionBar"></activity>
+
+        <service
+            android:name=".Service.KakaoPushListenerService"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
+        <activity
+            android:name=".Activity.MessageActivity"
+            android:label="@string/title_activity_message"
             android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -20,14 +33,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <service android:name=".Service.KakaoPushListenerService"
-            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
-            <intent-filter>
-                <action android:name="android.service.notification.NotificationListenerService" />
-            </intent-filter>
-        </service>
-
+        <activity android:name=".Activity.ChatActivity"></activity>
     </application>
 
 </manifest>

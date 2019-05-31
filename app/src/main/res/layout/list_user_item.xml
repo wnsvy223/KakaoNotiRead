@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="10dp"
+    android:background="?android:selectableItemBackground">
+
+    <de.hdodenhof.circleimageview.CircleImageView
+        android:id="@+id/imgView"
+        android:layout_width="55dp"
+        android:layout_height="55dp"
+        android:layout_marginBottom="15dp"
+        android:layout_marginStart="15dp"
+        android:layout_marginTop="15dp"
+        />
+
+    <TextView
+        android:id="@+id/userId"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:textColor="@android:color/black"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:textSize="15sp"
+        android:layout_alignTop="@+id/imgView"
+        android:layout_toEndOf="@+id/imgView" />
+
+    <TextView
+        android:id="@+id/message"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:maxLines="2"
+        android:maxHeight="20dp"
+        android:maxWidth="180dp"
+        android:ellipsize="end"
+        android:textSize="13sp"
+        android:layout_gravity="bottom"
+        android:layout_alignStart="@+id/userId"
+        android:layout_alignBottom="@+id/imgView" />
+
+    <TextView
+        android:id="@+id/timeStamp"
+        android:gravity="center"
+        android:layout_width="80dp"
+        android:textSize="13sp"
+        android:layout_height="match_parent"
+        android:layout_alignParentEnd="true"
+        android:layout_alignBottom="@+id/message"
+        android:layout_below="@+id/frameLayout7" />
+
+    <FrameLayout
+        android:layout_width="80dp"
+        android:layout_height="wrap_content"
+        android:id="@+id/frameLayout7"
+        android:layout_alignBottom="@+id/userId"
+        android:layout_marginBottom="5dp"
+        android:layout_alignParentEnd="true">
+
+
+        <TextView
+            android:id="@+id/badgecount"
+            android:background="@drawable/circle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:visibility="invisible"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            />
+
+    </FrameLayout>
+
+</RelativeLayout>
+
+
