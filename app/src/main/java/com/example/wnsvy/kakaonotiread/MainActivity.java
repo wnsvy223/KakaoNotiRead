@@ -209,7 +209,6 @@ public class MainActivity extends AppCompatActivity {
                             break;
                         case R.id.ttsVolume:
                             textToSpeech.speak("읽기 볼륨 값은" + progress + "입니다", TextToSpeech.QUEUE_FLUSH, ttsParam, "1");
-                            sharedPreferences.edit().putInt("ttsVolume", progress).apply();
                             audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, progress, 0);
                             vol = progress;
                             Log.d("읽기볼륨", String.valueOf(getConvertValue(progress)));

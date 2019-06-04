@@ -33,14 +33,14 @@ public class CommonApplication extends Application {
                     if(sharedPreferences != null) {
                         int ttsSpeechRateValue = sharedPreferences.getInt("ttsSpeechRate", 0);
                         int ttsToneValue = sharedPreferences.getInt("ttsTone", 0);
-                        int ttsVolume = sharedPreferences.getInt("ttsVolume",0);
+                        int currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
                         String defaultEngine = sharedPreferences.getString("ttsEngine", "");
                         textToSpeech.setLanguage(Locale.KOREAN); // 언어
                         textToSpeech.setPitch(ttsToneValue * 0.1f);
                         textToSpeech.setSpeechRate(ttsSpeechRateValue * 0.1f);
                         textToSpeech.setEngineByPackageName(defaultEngine);
-                        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, ttsVolume, 0);
-                        Log.d("초기값 : ", "톤 : " + ttsToneValue + "속도 : " + ttsSpeechRateValue + "엔지 : " + defaultEngine + "볼륨 : " + ttsVolume);
+                        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, currentVolume, 0);
+                        Log.d("초기값 : ", "톤 : " + ttsToneValue + "속도 : " + ttsSpeechRateValue + "엔지 : " + defaultEngine + "볼륨 : " + currentVolume);
                     }
                 }
             }
