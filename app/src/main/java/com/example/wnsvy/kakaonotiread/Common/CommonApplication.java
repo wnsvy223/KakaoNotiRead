@@ -1,7 +1,12 @@
 package com.example.wnsvy.kakaonotiread.Common;
 
 import android.app.Application;
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.media.AudioManager;
 import android.speech.tts.TextToSpeech;
+import android.util.Log;
+
 import java.util.Locale;
 
 import io.realm.Realm;
@@ -23,7 +28,20 @@ public class CommonApplication extends Application {
             @Override
             public void onInit(int status) { // 초기화
                 if (status != ERROR) {
-                    textToSpeech.setLanguage(Locale.KOREAN); // 언어
+                    SharedPreferences sharedPreferences = getSharedPreferences("tts",MODE_PRIVATE );
+                    AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+                    if(sharedPreferences != null) {
+                        int ttsSpeechRateValue = sharedPreferences.getInt("ttsSpeechRate", 0);
+                        int ttsToneValue = sharedPreferences.getInt("ttsTone", 0);
+                        int ttsVolume = sharedPreferences.getInt("ttsVolume",0);
+                        String defaultEngine = sharedPreferences.getString("ttsEngine", "");
+                        textToSpeech.setLanguage(Locale.KOREAN); // 언어
+                        textToSpeech.setPitch(ttsToneValue * 0.1f);
+                        textToSpeech.setSpeechRate(ttsSpeechRateValue * 0.1f);
+                        textToSpeech.setEngineByPackageName(defaultEngine);
+                        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, ttsVolume, 0);
+                        Log.d("초기값 : ", "톤 : " + ttsToneValue + "속도 : " + ttsSpeechRateValue + "엔지 : " + defaultEngine + "볼륨 : " + ttsVolume);
+                    }
                 }
             }
         });

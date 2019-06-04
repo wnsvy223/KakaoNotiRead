@@ -67,13 +67,12 @@ public class MessageActivity extends AppCompatActivity {
         //RealmResults<Users> realmResults = realm.where(Users.class).sort("timeStamp",Sort.DESCENDING).limit(1).findAllAsync();
         // 타임스탬프로 정령해서 가장 최근메시지 1개만 가져오기
 
-        RealmResults<Users> results = realm.where(Users.class).sort("timeStamp",Sort.DESCENDING).distinct("userId").findAllAsync();
+        RealmResults<Users> results = realm.where(Users.class).sort("timeStamp",Sort.DESCENDING).distinct("userId").findAll();
         Log.d("테스트:" , String.valueOf(results));
 
-        MessageAdapter messageAdapter = new MessageAdapter(results,true, this,"message");
+        MessageAdapter messageAdapter = new MessageAdapter(results,true, this);
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
         recyclerView.setLayoutManager(linearLayoutManager);
-        recyclerView.setHasFixedSize(true);
         recyclerView.setAdapter(messageAdapter);
     }
 

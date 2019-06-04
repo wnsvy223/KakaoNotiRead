@@ -9,7 +9,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.example.wnsvy.kakaonotiread.Activity.ChatActivity;
@@ -22,7 +21,7 @@ import io.realm.RealmResults;
 
 public class MessageAdapter extends RealmRecyclerViewAdapter<Users, MessageAdapter.ViewHolder>{
     private Context context;
-    private String type;
+    private RealmResults realmResults;
 
     class ViewHolder extends  RecyclerView.ViewHolder{
 
@@ -33,18 +32,18 @@ public class MessageAdapter extends RealmRecyclerViewAdapter<Users, MessageAdapt
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            userId = itemView.findViewById(R.id.userId);
+            userId = itemView.findViewById(R.id.id);
             message = itemView.findViewById(R.id.message);
             timeStamp = itemView.findViewById(R.id.timeStamp);
             circleImageView = itemView.findViewById(R.id.imgView);
         }
     }
 
-    public MessageAdapter(@Nullable RealmResults<Users> data, boolean autoUpdate, Context context, String type) {
+    public MessageAdapter(@Nullable RealmResults<Users> data, boolean autoUpdate, Context context) {
         super(data, autoUpdate);
         setHasStableIds(true);
         this.context = context;
-        this.type = type;
+        this.realmResults = data;
     }
 
     @NonNull
@@ -66,16 +65,17 @@ public class MessageAdapter extends RealmRecyclerViewAdapter<Users, MessageAdapt
             viewHolder.itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    if (type.equals("message")) {
                         Intent intent = new Intent(context, ChatActivity.class);
                         intent.putExtra("id", users.getUserId());
                         context.startActivity(intent);
-                    } else {
-                        // TTS 읽기 로직
-                    }
                 }
             });
         }
+    }
+
+    @Override
+    public int getItemCount() {
+        return realmResults.size();
     }
 
     @Override

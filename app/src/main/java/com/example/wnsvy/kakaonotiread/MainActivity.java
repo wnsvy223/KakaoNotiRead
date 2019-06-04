@@ -40,7 +40,6 @@ public class MainActivity extends AppCompatActivity {
     public SeekBar ttsVolume;
     public SeekBar ttsTone;
     public Spinner spinner;
-    private CommonApplication commonApplication;
     private TextToSpeech textToSpeech;
     public SharedPreferences sharedPreferences;
     public AudioManager audioManager;
@@ -203,20 +202,19 @@ public class MainActivity extends AppCompatActivity {
 
                     switch (seekBar.getId()) {
                         case R.id.ttsSpeechRate:
-                            //commonApplication.setTextToSpeechRate(getConvertValue(progress));
                             textToSpeech.setSpeechRate(getConvertValue(progress));
                             sharedPreferences.edit().putInt("ttsSpeechRate", progress).apply();
                             textToSpeech.speak("읽기 속도 값은" + progress + "입니다", TextToSpeech.QUEUE_FLUSH, ttsParam, "1");
                             Log.d("읽기속도", String.valueOf(getConvertValue(progress)));
                             break;
                         case R.id.ttsVolume:
-                            Log.d("읽기볼륨", String.valueOf(getConvertValue(progress)));
                             textToSpeech.speak("읽기 볼륨 값은" + progress + "입니다", TextToSpeech.QUEUE_FLUSH, ttsParam, "1");
+                            sharedPreferences.edit().putInt("ttsVolume", progress).apply();
                             audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, progress, 0);
                             vol = progress;
+                            Log.d("읽기볼륨", String.valueOf(getConvertValue(progress)));
                             break;
                         case R.id.ttsTone:
-                            //commonApplication.setTextToSpeechPitch(getConvertValue(progress));
                             textToSpeech.setPitch(getConvertValue(progress));
                             sharedPreferences.edit().putInt("ttsTone", progress).apply();
                             textToSpeech.speak("읽기 톤 값은" + progress + "입니다", TextToSpeech.QUEUE_FLUSH, ttsParam, "1");

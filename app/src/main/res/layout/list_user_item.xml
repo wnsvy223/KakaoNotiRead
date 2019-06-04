@@ -16,7 +16,7 @@
         />
 
     <TextView
-        android:id="@+id/userId"
+        android:id="@+id/id"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="32dp"
@@ -37,7 +37,7 @@
         android:ellipsize="end"
         android:textSize="13sp"
         android:layout_gravity="bottom"
-        android:layout_alignStart="@+id/userId"
+        android:layout_alignStart="@+id/id"
         android:layout_alignBottom="@+id/imgView" />
 
     <TextView
@@ -54,7 +54,7 @@
         android:layout_width="80dp"
         android:layout_height="wrap_content"
         android:id="@+id/frameLayout7"
-        android:layout_alignBottom="@+id/userId"
+        android:layout_alignBottom="@+id/id"
         android:layout_marginBottom="5dp"
         android:layout_alignParentEnd="true">
 
