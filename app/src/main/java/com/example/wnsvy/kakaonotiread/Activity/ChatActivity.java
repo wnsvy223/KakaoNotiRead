@@ -5,11 +5,13 @@ import android.content.Intent;
 import android.media.AudioManager;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.example.wnsvy.kakaonotiread.Adapter.ChatAdapter;
 import com.example.wnsvy.kakaonotiread.Adapter.MessageAdapter;
@@ -57,6 +59,9 @@ public class ChatActivity extends AppCompatActivity {
             }
         }
     };
+    public LinearLayoutManager linearLayoutManager;
+    public RealmResults<Users> realmResults;
+    public RealmResults<Users> allResults;
 
 
     @Override
@@ -64,10 +69,7 @@ public class ChatActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
 
-        recyclerView = findViewById(R.id.recyclerView);
-
-        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-        textToSpeech = CommonApplication.getInstance().getTextToSpeech();
+        init();
 
         // TTS 읽기 기능 미디어플레이어 재생시 중지 및 재시작 처리
         textToSpeech.setOnUtteranceProgressListener(new UtteranceProgressListener() {
@@ -94,20 +96,61 @@ public class ChatActivity extends AppCompatActivity {
         Intent intent = getIntent();
         String id = intent.getStringExtra("id");
         realm = Realm.getDefaultInstance();
-        RealmResults<Users> realmResults = realm.where(Users.class).equalTo("userId",id).sort("timeStamp",Sort.ASCENDING).findAll();
+        realmResults = realm.where(Users.class).equalTo("userId",id).sort("timeStamp",Sort.DESCENDING).limit(10).findAll(); // 내림차순
         //인탠트로 넘어온 유저의 메시지 전체 조회(동기방식으로 받아와서 사이즈값을 UI스레드에서 받아 스크롤 이동 메소드 실행되도록 함)
+        allResults = realm.where(Users.class).equalTo("userId",id).sort("timeStamp",Sort.DESCENDING).findAll();
 
         ChatAdapter chatAdapter = new ChatAdapter(realmResults,true, this, textToSpeech);
-        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
+        linearLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
+        linearLayoutManager.setReverseLayout(true);
+        linearLayoutManager.setStackFromEnd(true);
         recyclerView.setLayoutManager(linearLayoutManager);
         recyclerView.setAdapter(chatAdapter);
-        recyclerView.scrollToPosition(realmResults.size() - 1);
+        recyclerView.scrollToPosition(0);
+
+        // 채팅 메시지 스크롤 리스너( 메시지 추가 로딩 )
+        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+            }
+
+            @Override
+            public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
+                super.onScrollStateChanged(recyclerView, newState);
+
+                int totalItemCount = linearLayoutManager.getItemCount(); // 전체 아이템 갯수 (화면에 로딩된 전체 데이터)
+                if(!recyclerView.canScrollVertically(-1)){ // 스크롤이 뷰 최상단에 도착하면
+                    loadMore(totalItemCount); // 메시지 로딩
+                }
+            }
+        });
+    }
+
+
+    public void init(){
+        recyclerView = findViewById(R.id.recyclerView);
+        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        textToSpeech = CommonApplication.getInstance().getTextToSpeech();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         realm.close();
+    }
+
+    public void loadMore(int position){
+        if(position == allResults.size()){
+            Toast.makeText(getApplicationContext(),"모든 메시지가 로딩 되었습니다.",Toast.LENGTH_SHORT).show();
+        }else {
+            Intent intent = getIntent();
+            String id = intent.getStringExtra("id");
+            realmResults = realm.where(Users.class).equalTo("userId", id).sort("timeStamp", Sort.DESCENDING).limit(position + 10).findAll();
+            ChatAdapter chatAdapter = new ChatAdapter(realmResults, true, this, textToSpeech);
+            recyclerView.setAdapter(chatAdapter);
+            recyclerView.scrollToPosition(realmResults.size() - 5);
+        }
     }
 
     // RealmResults<Users> to List<Model> 변환 메소드

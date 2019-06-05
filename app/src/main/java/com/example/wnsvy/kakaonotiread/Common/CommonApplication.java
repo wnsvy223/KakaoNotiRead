@@ -40,7 +40,7 @@ public class CommonApplication extends Application {
                         textToSpeech.setSpeechRate(ttsSpeechRateValue * 0.1f);
                         textToSpeech.setEngineByPackageName(defaultEngine);
                         audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, currentVolume, 0);
-                        Log.d("초기값 : ", "톤 : " + ttsToneValue + "속도 : " + ttsSpeechRateValue + "엔지 : " + defaultEngine + "볼륨 : " + currentVolume);
+                        Log.d("초기값", " 톤: " + ttsToneValue + " 속도: " + ttsSpeechRateValue + " 엔진: " + defaultEngine + " 볼륨: " + currentVolume);
                     }
                 }
             }

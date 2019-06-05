@@ -13,62 +13,91 @@
         android:layout_height="match_parent">
 
         <TextView
-            android:text="@string/setting"
+            android:textStyle="bold"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
-            android:gravity="center"/>
+            android:gravity="center"
+            android:text="@string/setting" />
 
         <TextView
-            android:layout_marginStart="10dp"
-            android:text="@string/ttsSpeechRate"
+            android:textStyle="bold"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="80dp"/>
+            android:layout_marginStart="10dp"
+            android:layout_marginTop="80dp"
+            android:text="@string/ttsSpeechRate" />
+
         <SeekBar
             android:id="@+id/ttsSpeechRate"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="100dp"/>
+            android:layout_marginTop="100dp" />
 
         <TextView
-            android:layout_marginStart="10dp"
-            android:text="@string/ttsVolume"
+            android:textStyle="bold"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="180dp"/>
+            android:layout_marginStart="10dp"
+            android:layout_marginTop="180dp"
+            android:text="@string/ttsVolume" />
+
         <SeekBar
             android:id="@+id/ttsVolume"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="200dp"/>
+            android:layout_marginTop="200dp" />
 
         <TextView
-            android:layout_marginStart="10dp"
-            android:text="@string/ttsTone"
+            android:textStyle="bold"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="280dp"/>
+            android:layout_marginStart="10dp"
+            android:layout_marginTop="280dp"
+            android:text="@string/ttsTone" />
+
         <SeekBar
             android:id="@+id/ttsTone"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="300dp"/>
+            android:layout_marginTop="300dp" />
 
         <TextView
-            android:layout_marginStart="10dp"
-            android:text="@string/ttsEngine"
+            android:textStyle="bold"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="380dp"/>
+            android:layout_marginStart="10dp"
+            android:layout_marginTop="380dp"
+            android:text="@string/ttsEngine" />
+
         <Spinner
             android:id="@+id/spinner"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:spinnerMode="dropdown"
-            android:layout_marginTop="400dp">
+            android:layout_marginTop="400dp"
+            android:spinnerMode="dropdown" />
 
-        </Spinner>
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_marginTop="480dp"
+            android:layout_marginStart="10dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:textStyle="bold"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/mute" />
+
+            <CheckBox
+                android:id="@+id/mute"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="15dp"/>
+
+        </LinearLayout>
+
 
     </RelativeLayout>
 

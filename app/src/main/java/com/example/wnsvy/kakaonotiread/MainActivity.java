@@ -22,6 +22,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.Spinner;
@@ -35,7 +37,7 @@ import static android.speech.tts.TextToSpeech.Engine.KEY_PARAM_VOLUME;
 
 public class MainActivity extends AppCompatActivity {
 
-
+    public CheckBox mute;
     public SeekBar ttsSpeechRate;
     public SeekBar ttsVolume;
     public SeekBar ttsTone;
@@ -124,6 +126,7 @@ public class MainActivity extends AppCompatActivity {
         int ttsToneValue = sharedPreferences.getInt("ttsTone", 0);
         String defaultEngine = sharedPreferences.getString("ttsEngine","");
         ttsEngineNum = sharedPreferences.getInt("ttsEngineNum",0);
+        boolean isMute = sharedPreferences.getBoolean("ttsMuteState", false);
 
         if(ttsSpeechRateValue != 0 || ttsToneValue != 0 || sharedPreferences != null) {
             ttsSpeechRate.setProgress(ttsSpeechRateValue);
@@ -136,6 +139,15 @@ public class MainActivity extends AppCompatActivity {
         setSeekBar(ttsTone);
         setSeekBar(ttsVolume);
         setTTSEngine();
+
+        mute.setChecked(isMute);
+        mute.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                Log.d("체크상태", String.valueOf(b));
+                sharedPreferences.edit().putBoolean("ttsMuteState", b).apply();
+            }
+        });
     }
 
     public void initView(){
@@ -151,6 +163,7 @@ public class MainActivity extends AppCompatActivity {
         ttsTone.setMax(20);
         floatingActionButton = findViewById(R.id.fab);
         spinner = findViewById(R.id.spinner);
+        mute = findViewById(R.id.mute);
         setCollapsingToolbarLayout();
     }
 
