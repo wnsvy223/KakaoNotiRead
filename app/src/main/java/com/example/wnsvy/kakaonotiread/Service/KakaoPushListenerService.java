@@ -18,6 +18,8 @@ import java.util.Calendar;
 import java.util.Locale;
 
 import io.realm.Realm;
+import io.realm.RealmResults;
+import io.realm.Sort;
 
 import static android.speech.tts.TextToSpeech.Engine.KEY_PARAM_VOLUME;
 
@@ -116,25 +118,26 @@ public class KakaoPushListenerService extends NotificationListenerService {
     }
 
     private void setKakaoNoti(StatusBarNotification sbn){
-        Log.d(TAG, String.valueOf(sbn.getNotification().extras));
+        //Log.d(TAG, String.valueOf(sbn.getNotification().extras));
         Bundle kakaoPushData = sbn.getNotification().extras; // 노티로 넘어오는 푸시메시지 Bundle 데이터
 
         SharedPreferences sharedPreferences = getSharedPreferences("tts", MODE_PRIVATE);
         boolean isMute = sharedPreferences.getBoolean("ttsMuteState", false);
-
         final String title = kakaoPushData.getString("android.title"); // 카톡푸시메시지 방의 제목
         final String text = kakaoPushData.getString("android.text"); // 카톡푸시메시지 내용
+        final String room = kakaoPushData.getString("android.subText"); // 카톡푸시 그룹채팅 방의 제목
         Calendar calendar = Calendar.getInstance();
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.KOREA);
-        final String timeStamp = simpleDateFormat.format(calendar.getTime());
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS", Locale.KOREA);
+        final String timeStamp = simpleDateFormat.format(calendar.getTime()); // 타임 스탬프
 
         if (!TextUtils.isEmpty(title) && !TextUtils.isEmpty(text)) {
+            Log.d(TAG, String.valueOf(kakaoPushData));
             Bundle ttsParam = new Bundle();
             ttsParam.putFloat(KEY_PARAM_VOLUME, 2.0f);
             if(!isMute) {
                 textToSpeech.speak(title + "님으로부터 온 메시지는" + text + "입니다", TextToSpeech.QUEUE_FLUSH, ttsParam, "1");
-                //tts.speak(title + "님으로부터 온 메시지는" + text + "입니다", TextToSpeech.QUEUE_FLUSH, ttsParam, "1");
             }
+
             realm.executeTransaction(new Realm.Transaction() { // 푸시 메시지 날아오면 Realm DB에 값 넣음.
                 @Override
                 public void execute(Realm realm) {
@@ -142,6 +145,12 @@ public class KakaoPushListenerService extends NotificationListenerService {
                     users.setUserId(title);
                     users.setMessage(text);
                     users.setTimeStamp(timeStamp);
+                    if(room == null){
+                        users.setRoom(title);
+                    }else{
+                        users.setRoom(room);
+                    }
+                    users.setRead(false);
                 }
             });
         }

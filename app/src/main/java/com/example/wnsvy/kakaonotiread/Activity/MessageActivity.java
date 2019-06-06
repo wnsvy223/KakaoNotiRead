@@ -7,31 +7,18 @@ import android.os.Bundle;
 import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 
 import com.example.wnsvy.kakaonotiread.Adapter.MessageAdapter;
-import com.example.wnsvy.kakaonotiread.MainActivity;
 import com.example.wnsvy.kakaonotiread.Model.Users;
 import com.example.wnsvy.kakaonotiread.R;
-import com.google.gson.Gson;
-
-import org.json.JSONObject;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
 
 import io.realm.Realm;
 import io.realm.RealmResults;
@@ -62,17 +49,14 @@ public class MessageActivity extends AppCompatActivity {
 
         setCollapsingToolbarLayout();
         recyclerView = findViewById(R.id.recyclerView);
-
-        realm = Realm.getDefaultInstance();
-        //RealmResults<Users> realmResults = realm.where(Users.class).sort("timeStamp",Sort.DESCENDING).limit(1).findAllAsync();
-        // 타임스탬프로 정령해서 가장 최근메시지 1개만 가져오기
-
-        RealmResults<Users> results = realm.where(Users.class).sort("timeStamp",Sort.DESCENDING).distinct("userId").findAll();
-        Log.d("테스트:" , String.valueOf(results));
-
-        MessageAdapter messageAdapter = new MessageAdapter(results,true, this);
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
         recyclerView.setLayoutManager(linearLayoutManager);
+
+        realm = Realm.getDefaultInstance();
+        RealmResults<Users> results = realm.where(Users.class).sort("timeStamp",Sort.DESCENDING).distinct("room").findAll();
+        // 타임스탬프로 내림차순 정렬 후 방이름 중복 제거 : 각 채팅방의 마지막 메시지만 출력하기 위함
+
+        MessageAdapter messageAdapter = new MessageAdapter(results,true, this, realm);
         recyclerView.setAdapter(messageAdapter);
     }
 

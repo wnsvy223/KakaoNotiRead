@@ -27,7 +27,7 @@ public class CommonApplication extends Application {
         CommonApplication.textToSpeech = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
             @Override
             public void onInit(int status) { // 초기화
-                if (status != ERROR) {
+                if (status == TextToSpeech.SUCCESS) {
                     SharedPreferences sharedPreferences = getSharedPreferences("tts",MODE_PRIVATE );
                     AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
                     if(sharedPreferences != null) {
@@ -70,4 +70,9 @@ public class CommonApplication extends Application {
         textToSpeech.setLanguage(locale); // 언어
     }
 
+    @Override
+    public void onTerminate() {
+        super.onTerminate();
+        textToSpeech.shutdown();
+    }
 }

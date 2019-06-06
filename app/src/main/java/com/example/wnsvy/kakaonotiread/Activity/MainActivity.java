@@ -1,4 +1,4 @@
-package com.example.wnsvy.kakaonotiread;
+package com.example.wnsvy.kakaonotiread.Activity;
 
 import android.content.Context;
 import android.content.Intent;
@@ -29,6 +29,7 @@ import android.widget.SeekBar;
 import android.widget.Spinner;
 
 import com.example.wnsvy.kakaonotiread.Common.CommonApplication;
+import com.example.wnsvy.kakaonotiread.R;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -253,7 +254,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         if(textToSpeech != null){
-           //textToSpeech.stop();
+           //textToSpeech.shutdown();
         }
     }
 

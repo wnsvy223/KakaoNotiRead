@@ -2,7 +2,11 @@ package com.example.wnsvy.kakaonotiread.Activity;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.media.AudioAttributes;
+import android.media.AudioFocusRequest;
 import android.media.AudioManager;
+import android.os.Build;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.support.annotation.NonNull;
@@ -21,17 +25,21 @@ import com.example.wnsvy.kakaonotiread.R;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import io.realm.Realm;
 import io.realm.RealmResults;
 import io.realm.Sort;
 
+import static android.speech.tts.TextToSpeech.ERROR;
+import static android.speech.tts.TextToSpeech.Engine.KEY_PARAM_VOLUME;
+
 public class ChatActivity extends AppCompatActivity {
 
     private Realm realm;
     public RecyclerView recyclerView;
-    public TextToSpeech textToSpeech;
-    public AudioManager audioManager;
+    private TextToSpeech textToSpeech;
+    private AudioManager audioManager;
     private AudioManager.OnAudioFocusChangeListener audioFocusChangeListener
             = new AudioManager.OnAudioFocusChangeListener() {
         @Override
@@ -69,7 +77,29 @@ public class ChatActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
 
-        init();
+        initView();
+
+        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        textToSpeech = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit(int status) { // 초기화
+                if (status == TextToSpeech.SUCCESS) {
+                    SharedPreferences sharedPreferences = getSharedPreferences("tts",MODE_PRIVATE );
+                    AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+                    if(sharedPreferences != null) {
+                        int ttsSpeechRateValue = sharedPreferences.getInt("ttsSpeechRate", 0);
+                        int ttsToneValue = sharedPreferences.getInt("ttsTone", 0);
+                        int currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+                        String defaultEngine = sharedPreferences.getString("ttsEngine", "");
+                        textToSpeech.setLanguage(Locale.KOREAN); // 언어
+                        textToSpeech.setPitch(ttsToneValue * 0.1f);
+                        textToSpeech.setSpeechRate(ttsSpeechRateValue * 0.1f);
+                        textToSpeech.setEngineByPackageName(defaultEngine);
+                        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, currentVolume, 0);
+                    }
+                }
+            }
+        });
 
         // TTS 읽기 기능 미디어플레이어 재생시 중지 및 재시작 처리
         textToSpeech.setOnUtteranceProgressListener(new UtteranceProgressListener() {
@@ -94,13 +124,13 @@ public class ChatActivity extends AppCompatActivity {
         });
 
         Intent intent = getIntent();
-        String id = intent.getStringExtra("id");
+        String room = intent.getStringExtra("room");
         realm = Realm.getDefaultInstance();
-        realmResults = realm.where(Users.class).equalTo("userId",id).sort("timeStamp",Sort.DESCENDING).limit(10).findAll(); // 내림차순
+        realmResults = realm.where(Users.class).equalTo("room",room).sort("timeStamp",Sort.DESCENDING).limit(10).findAll();
         //인탠트로 넘어온 유저의 메시지 전체 조회(동기방식으로 받아와서 사이즈값을 UI스레드에서 받아 스크롤 이동 메소드 실행되도록 함)
-        allResults = realm.where(Users.class).equalTo("userId",id).sort("timeStamp",Sort.DESCENDING).findAll();
+        allResults = realm.where(Users.class).equalTo("room",room).sort("timeStamp",Sort.DESCENDING).findAll();
 
-        ChatAdapter chatAdapter = new ChatAdapter(realmResults,true, this, textToSpeech);
+        ChatAdapter chatAdapter = new ChatAdapter(realmResults,true, this, textToSpeech, realm);
         linearLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
         linearLayoutManager.setReverseLayout(true);
         linearLayoutManager.setStackFromEnd(true);
@@ -128,26 +158,34 @@ public class ChatActivity extends AppCompatActivity {
     }
 
 
-    public void init(){
+    public void initView(){
         recyclerView = findViewById(R.id.recyclerView);
-        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-        textToSpeech = CommonApplication.getInstance().getTextToSpeech();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         realm.close();
+        //textToSpeech.shutdown();
     }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if(textToSpeech != null){
+            //textToSpeech.stop();
+        }
+    }
+
 
     public void loadMore(int position){
         if(position == allResults.size()){
             Toast.makeText(getApplicationContext(),"모든 메시지가 로딩 되었습니다.",Toast.LENGTH_SHORT).show();
         }else {
             Intent intent = getIntent();
-            String id = intent.getStringExtra("id");
-            realmResults = realm.where(Users.class).equalTo("userId", id).sort("timeStamp", Sort.DESCENDING).limit(position + 10).findAll();
-            ChatAdapter chatAdapter = new ChatAdapter(realmResults, true, this, textToSpeech);
+            String room = intent.getStringExtra("room");
+            realmResults = realm.where(Users.class).equalTo("room", room).sort("timeStamp", Sort.DESCENDING).limit(position + 20).findAll();
+            ChatAdapter chatAdapter = new ChatAdapter(realmResults, true, this, textToSpeech, realm);
             recyclerView.setAdapter(chatAdapter);
             recyclerView.scrollToPosition(realmResults.size() - 5);
         }

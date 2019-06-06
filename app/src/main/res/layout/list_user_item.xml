@@ -67,7 +67,6 @@
             android:maxLines="1"
             android:layout_gravity="center"
             android:gravity="center"
-            android:visibility="invisible"
             android:textColor="@color/white"
             android:textSize="12sp"
             />

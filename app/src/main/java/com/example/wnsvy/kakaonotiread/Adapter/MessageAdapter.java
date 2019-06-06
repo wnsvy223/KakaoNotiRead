@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,34 +17,40 @@ import com.example.wnsvy.kakaonotiread.Model.Users;
 import com.example.wnsvy.kakaonotiread.R;
 
 import de.hdodenhof.circleimageview.CircleImageView;
+import io.realm.Realm;
 import io.realm.RealmRecyclerViewAdapter;
 import io.realm.RealmResults;
+import io.realm.Sort;
 
 public class MessageAdapter extends RealmRecyclerViewAdapter<Users, MessageAdapter.ViewHolder>{
     private Context context;
     private RealmResults realmResults;
+    private Realm realm;
 
     class ViewHolder extends  RecyclerView.ViewHolder{
 
-        private TextView userId;
+        private TextView room;
         private TextView message;
         private TextView timeStamp;
+        private TextView badgeCount;
         private CircleImageView circleImageView;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            userId = itemView.findViewById(R.id.id);
+            room = itemView.findViewById(R.id.id);
             message = itemView.findViewById(R.id.message);
             timeStamp = itemView.findViewById(R.id.timeStamp);
+            badgeCount = itemView.findViewById(R.id.badgecount);
             circleImageView = itemView.findViewById(R.id.imgView);
         }
     }
 
-    public MessageAdapter(@Nullable RealmResults<Users> data, boolean autoUpdate, Context context) {
+    public MessageAdapter(@Nullable RealmResults<Users> data,boolean autoUpdate, Context context, Realm realm) {
         super(data, autoUpdate);
         setHasStableIds(true);
         this.context = context;
         this.realmResults = data;
+        this.realm = realm;
     }
 
     @NonNull
@@ -54,19 +61,27 @@ public class MessageAdapter extends RealmRecyclerViewAdapter<Users, MessageAdapt
     }
 
     @Override
-    public void onBindViewHolder(@NonNull final ViewHolder viewHolder, int position) {
+    public void onBindViewHolder(@NonNull ViewHolder viewHolder, int position) {
         if(viewHolder.getAdapterPosition() != RecyclerView.NO_POSITION) {
-            final Users users = getItem(viewHolder.getAdapterPosition());
-            viewHolder.userId.setText(users.getUserId());
+            final Users users = getItem(position);
+            viewHolder.room.setText(users.getRoom());
             viewHolder.message.setText(users.getMessage());
             viewHolder.timeStamp.setText(users.getTimeStamp());
             Glide.with(context).load(R.drawable.kakaotalk).override(150, 150).into(viewHolder.circleImageView);
+
+            RealmResults<Users> res = realm.where(Users.class).sort("timeStamp",Sort.DESCENDING).equalTo("room",users.getRoom()).findAll();
+            // 읽지 않은 메시지 쿼리
+            if(res.size() == 0){
+                viewHolder.badgeCount.setVisibility(View.INVISIBLE);
+            }else{
+                viewHolder.badgeCount.setText(String.valueOf(res.size()));
+            }
 
             viewHolder.itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                         Intent intent = new Intent(context, ChatActivity.class);
-                        intent.putExtra("id", users.getUserId());
+                        intent.putExtra("room", users.getRoom());
                         context.startActivity(intent);
                 }
             });

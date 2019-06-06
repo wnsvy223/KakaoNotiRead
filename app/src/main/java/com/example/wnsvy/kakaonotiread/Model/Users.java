@@ -6,6 +6,9 @@ public class Users extends RealmObject {
     private String userId;
     private String message;
     private String timeStamp;
+    private String room;
+    private boolean isRead;
+    private int unReadCount;
 
     public String getUserId() {
         return userId;
@@ -29,5 +32,29 @@ public class Users extends RealmObject {
 
     public void setTimeStamp(String timeStamp) {
         this.timeStamp = timeStamp;
+    }
+
+    public String getRoom() {
+        return room;
+    }
+
+    public void setRoom(String room) {
+        this.room = room;
+    }
+
+    public boolean isRead() {
+        return isRead;
+    }
+
+    public void setRead(boolean read) {
+        isRead = read;
+    }
+
+    public int getUnReadCount() {
+        return unReadCount;
+    }
+
+    public void setUnReadCount(int unReadCount) {
+        this.unReadCount = unReadCount;
     }
 }
