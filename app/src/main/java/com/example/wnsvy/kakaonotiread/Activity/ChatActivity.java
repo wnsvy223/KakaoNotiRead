@@ -10,6 +10,7 @@ import android.os.Build;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.support.annotation.NonNull;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
@@ -70,7 +71,7 @@ public class ChatActivity extends AppCompatActivity {
     public LinearLayoutManager linearLayoutManager;
     public RealmResults<Users> realmResults;
     public RealmResults<Users> allResults;
-
+    public ActionBar actionBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -125,6 +126,7 @@ public class ChatActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
         String room = intent.getStringExtra("room");
+        actionBar.setTitle(room);
         realm = Realm.getDefaultInstance();
         realmResults = realm.where(Users.class).equalTo("room",room).sort("timeStamp",Sort.DESCENDING).limit(10).findAll();
         //인탠트로 넘어온 유저의 메시지 전체 조회(동기방식으로 받아와서 사이즈값을 UI스레드에서 받아 스크롤 이동 메소드 실행되도록 함)
@@ -160,6 +162,7 @@ public class ChatActivity extends AppCompatActivity {
 
     public void initView(){
         recyclerView = findViewById(R.id.recyclerView);
+        actionBar = getSupportActionBar();
     }
 
     @Override

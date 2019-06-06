@@ -69,7 +69,7 @@ public class MessageAdapter extends RealmRecyclerViewAdapter<Users, MessageAdapt
             viewHolder.timeStamp.setText(users.getTimeStamp());
             Glide.with(context).load(R.drawable.kakaotalk).override(150, 150).into(viewHolder.circleImageView);
 
-            RealmResults<Users> res = realm.where(Users.class).sort("timeStamp",Sort.DESCENDING).equalTo("room",users.getRoom()).findAll();
+            RealmResults<Users> res = realm.where(Users.class).sort("timeStamp",Sort.DESCENDING).equalTo("room",users.getRoom()).equalTo("isRead",false).findAll();
             // 읽지 않은 메시지 쿼리
             if(res.size() == 0){
                 viewHolder.badgeCount.setVisibility(View.INVISIBLE);
