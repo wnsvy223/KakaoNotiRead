@@ -1,5 +1,6 @@
 package com.example.wnsvy.kakaonotiread.Adapter;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.support.annotation.NonNull;
@@ -45,7 +46,7 @@ public class MessageAdapter extends RealmRecyclerViewAdapter<Users, MessageAdapt
         }
     }
 
-    public MessageAdapter(@Nullable RealmResults<Users> data,boolean autoUpdate, Context context, Realm realm) {
+    public MessageAdapter(@Nullable RealmResults<Users> data, boolean autoUpdate, Context context, Realm realm) {
         super(data, autoUpdate);
         setHasStableIds(true);
         this.context = context;
@@ -82,7 +83,9 @@ public class MessageAdapter extends RealmRecyclerViewAdapter<Users, MessageAdapt
                 public void onClick(View view) {
                         Intent intent = new Intent(context, ChatActivity.class);
                         intent.putExtra("room", users.getRoom());
-                        context.startActivity(intent);
+                        //context.startActivity(intent);
+                        ((Activity)context).startActivityForResult(intent, 1);
+                        // ChatActivity에서 메시지를 읽고 카운트값을 줄인후 갱신을 위해 호출( => 이 방법보다 콜백인터페이스가 정상적인 방법이라고 함)
                 }
             });
         }
@@ -96,5 +99,10 @@ public class MessageAdapter extends RealmRecyclerViewAdapter<Users, MessageAdapt
     @Override
     public int getItemViewType(int position) {
         return position;
+    }
+
+    @Override
+    public long getItemId(int position) {
+        return getItem(position).hashCode();
     }
 }

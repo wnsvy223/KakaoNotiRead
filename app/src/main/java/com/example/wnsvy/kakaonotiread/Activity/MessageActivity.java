@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.FloatingActionButton;
@@ -15,6 +16,7 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import com.example.wnsvy.kakaonotiread.Adapter.MessageAdapter;
 import com.example.wnsvy.kakaonotiread.Model.Users;
@@ -29,6 +31,7 @@ public class MessageActivity extends AppCompatActivity {
     private Realm realm;
     public RecyclerView recyclerView;
     private RealmResults<Users> result;
+    public MessageAdapter messageAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,7 +59,8 @@ public class MessageActivity extends AppCompatActivity {
         RealmResults<Users> results = realm.where(Users.class).sort("timeStamp",Sort.DESCENDING).distinct("room").findAll();
         // 타임스탬프로 내림차순 정렬 후 방이름 중복 제거 : 각 채팅방의 마지막 메시지만 출력하기 위함
 
-        MessageAdapter messageAdapter = new MessageAdapter(results,true, this, realm);
+        messageAdapter = new MessageAdapter(results,true, this, realm);
+        messageAdapter.setHasStableIds(true);
         recyclerView.setAdapter(messageAdapter);
     }
 
@@ -84,6 +88,14 @@ public class MessageActivity extends AppCompatActivity {
 
         final  AppBarLayout appBarLayout = findViewById(R.id.app_bar);
         appBarLayout.addOnOffsetChangedListener(onOffsetChangedListener);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if(requestCode == 1){
+            messageAdapter.notifyDataSetChanged();
+        }
     }
 
     @Override

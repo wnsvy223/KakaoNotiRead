@@ -80,7 +80,18 @@ public class ChatAdapter extends RealmRecyclerViewAdapter<Users, ChatAdapter.Vie
                         Bundle ttsParam = new Bundle();
                         ttsParam.putFloat(KEY_PARAM_VOLUME, 2.0f);
                         textToSpeech.speak(users.getUserId() + "님으로부터 온 메시지는" + users.getMessage() + "입니다", TextToSpeech.QUEUE_FLUSH, ttsParam, "1");
-                        RealmResults<Users> test = realm.where(Users.class).equalTo("timeStamp",users.getTimeStamp()).findAll();
+
+                        Realm realm = Realm.getDefaultInstance();
+                        realm.executeTransaction(new Realm.Transaction() {
+                            @Override
+                            public void execute (@NonNull Realm realm) {
+                                Users user = realm.where(Users.class).equalTo("timeStamp", users.getTimeStamp()).findFirst();
+                                if (user != null) {
+                                    user.setRead(true);
+                                }
+                                // 클릭한 메시지의 타임스탬프(고유값이므로)로 위치를 찾아 해당 위치의 isRead값 true로 업데이트
+                            }
+                        });
                 }
             });
         }
@@ -94,6 +105,11 @@ public class ChatAdapter extends RealmRecyclerViewAdapter<Users, ChatAdapter.Vie
     @Override
     public int getItemViewType(int position) {
         return position;
+    }
+
+    @Override
+    public long getItemId(int position) {
+        return getItem(position).hashCode();
     }
 
 }

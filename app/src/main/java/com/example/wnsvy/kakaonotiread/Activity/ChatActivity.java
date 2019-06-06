@@ -133,6 +133,7 @@ public class ChatActivity extends AppCompatActivity {
         allResults = realm.where(Users.class).equalTo("room",room).sort("timeStamp",Sort.DESCENDING).findAll();
 
         ChatAdapter chatAdapter = new ChatAdapter(realmResults,true, this, textToSpeech, realm);
+        chatAdapter.setHasStableIds(true);
         linearLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
         linearLayoutManager.setReverseLayout(true);
         linearLayoutManager.setStackFromEnd(true);
@@ -180,6 +181,12 @@ public class ChatActivity extends AppCompatActivity {
         }
     }
 
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        finish();
+    }
 
     public void loadMore(int position){
         if(position == allResults.size()){
