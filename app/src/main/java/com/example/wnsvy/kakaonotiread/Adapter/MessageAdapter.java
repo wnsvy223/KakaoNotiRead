@@ -72,7 +72,7 @@ public class MessageAdapter extends RealmRecyclerViewAdapter<Users, MessageAdapt
 
             RealmResults<Users> res = realm.where(Users.class).sort("timeStamp",Sort.DESCENDING).equalTo("room",users.getRoom()).equalTo("isRead",false).findAll();
             // 읽지 않은 메시지 쿼리
-            if(res.size() == 0){
+            if(res.size() <= 0){
                 viewHolder.badgeCount.setVisibility(View.INVISIBLE);
             }else{
                 viewHolder.badgeCount.setText(String.valueOf(res.size()));

@@ -1,7 +1,10 @@
 package com.example.wnsvy.kakaonotiread.Activity;
 
+import android.app.ActivityManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
@@ -13,6 +16,8 @@ import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.NotificationManagerCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -27,12 +32,15 @@ import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.Spinner;
+import android.widget.Toast;
 
 import com.example.wnsvy.kakaonotiread.Common.CommonApplication;
 import com.example.wnsvy.kakaonotiread.R;
+import com.example.wnsvy.kakaonotiread.Service.KakaoPushListenerService;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import static android.speech.tts.TextToSpeech.Engine.KEY_PARAM_VOLUME;
 
@@ -91,7 +99,6 @@ public class MainActivity extends AppCompatActivity {
         initView();
 
         textToSpeech = CommonApplication.getInstance().getTextToSpeech();
-
         // TTS 읽기 기능 미디어플레이어 재생시 중지 및 재시작 처리
         textToSpeech.setOnUtteranceProgressListener(new UtteranceProgressListener() {
             @Override
@@ -111,14 +118,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onError(String utteranceId) {
 
-            }
-        });
-
-        floatingActionButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "읽기 서비스 시작", Snackbar.LENGTH_LONG).setAction("", null).show();
-                startActivity(new Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS"));
             }
         });
 
@@ -149,6 +148,14 @@ public class MainActivity extends AppCompatActivity {
                 sharedPreferences.edit().putBoolean("ttsMuteState", b).apply();
             }
         });
+
+        floatingActionButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS")); // 노티 리스너 서비스 설정 권한세팅 호출
+            }
+        });
+
     }
 
     public void initView(){
@@ -259,12 +266,24 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        boolean isRunning = sharedPreferences.getBoolean("NLSRunning",false);
+        if(isRunning){
+            floatingActionButton.setImageDrawable(getResources().getDrawable(R.drawable.ic_notifications_active_black_24dp, getApplicationContext().getTheme()));
+        }else{
+            floatingActionButton.setImageDrawable(getResources().getDrawable(R.drawable.ic_notifications_off_black_24dp, getApplicationContext().getTheme()));
+        }
+    }
+
+    @Override
     protected void onPause() {
         super.onPause();
         if(textToSpeech != null){
             //textToSpeech.stop();
         }
     }
+
 
     private void setCollapsingToolbarLayout(){
         final CollapsingToolbarLayout collapsingToolbarLayout = findViewById(R.id.toolbar_layout);
@@ -312,4 +331,5 @@ public class MainActivity extends AppCompatActivity {
         }
         return super.onOptionsItemSelected(item);
     }
+
 }

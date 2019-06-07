@@ -1,5 +1,6 @@
 package com.example.wnsvy.kakaonotiread.Service;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.os.Bundle;
@@ -7,8 +8,10 @@ import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
+import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.example.wnsvy.kakaonotiread.Common.CommonApplication;
 import com.example.wnsvy.kakaonotiread.Model.Users;
@@ -55,11 +58,15 @@ public class KakaoPushListenerService extends NotificationListenerService {
         }
     };
     private Realm realm;
+    private SharedPreferences sharedPreferences;
 
 
     @Override
     public void onCreate() {
         super.onCreate();
+
+        sharedPreferences = getSharedPreferences("tts", MODE_PRIVATE);
+        sharedPreferences.edit().putBoolean("NLSRunning", true).apply(); // 노티 서비스 시작 설정값
 
         textToSpeech = CommonApplication.getInstance().getTextToSpeech();
         audioManager = (AudioManager)getSystemService(getApplicationContext().AUDIO_SERVICE);
@@ -86,6 +93,8 @@ public class KakaoPushListenerService extends NotificationListenerService {
         realm = Realm.getDefaultInstance();
     }
 
+
+
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -96,6 +105,7 @@ public class KakaoPushListenerService extends NotificationListenerService {
             textToSpeech = null;
         }
         realm.close();
+        sharedPreferences.edit().putBoolean("NLSRunning", false).apply(); // 노티 서비스 중지 설정값
     }
 
     @Override
@@ -118,10 +128,7 @@ public class KakaoPushListenerService extends NotificationListenerService {
     }
 
     private void setKakaoNoti(StatusBarNotification sbn){
-        //Log.d(TAG, String.valueOf(sbn.getNotification().extras));
         Bundle kakaoPushData = sbn.getNotification().extras; // 노티로 넘어오는 푸시메시지 Bundle 데이터
-
-        SharedPreferences sharedPreferences = getSharedPreferences("tts", MODE_PRIVATE);
         boolean isMute = sharedPreferences.getBoolean("ttsMuteState", false);
         final String title = kakaoPushData.getString("android.title"); // 카톡푸시메시지 방의 제목
         final String text = kakaoPushData.getString("android.text"); // 카톡푸시메시지 내용
