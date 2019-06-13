@@ -1,6 +1,5 @@
 package com.example.wnsvy.kakaonotiread.Service;
 
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.os.Bundle;
@@ -8,10 +7,8 @@ import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
-import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.example.wnsvy.kakaonotiread.Common.CommonApplication;
 import com.example.wnsvy.kakaonotiread.Model.Users;
@@ -21,8 +18,6 @@ import java.util.Calendar;
 import java.util.Locale;
 
 import io.realm.Realm;
-import io.realm.RealmResults;
-import io.realm.Sort;
 
 import static android.speech.tts.TextToSpeech.Engine.KEY_PARAM_VOLUME;
 
@@ -116,10 +111,12 @@ public class KakaoPushListenerService extends NotificationListenerService {
         if (!TextUtils.isEmpty(packageName)) {
             switch (packageName){
                 case "com.kakao.talk":
-                    setKakaoNoti(sbn);
+                    // 카카오톡 메시지
+                    saveNotificationToRealm(sbn,"KakaoTalk");
                     break;
-                case "sms":
-                    // SMS 메시지
+                case "com.samsung.android.messaging":
+                    // 삼성 MMS 메시지
+                    saveNotificationToRealm(sbn,"MMS");
                     break;
 
                 default:
@@ -127,7 +124,7 @@ public class KakaoPushListenerService extends NotificationListenerService {
         }
     }
 
-    private void setKakaoNoti(StatusBarNotification sbn){
+    private void saveNotificationToRealm(StatusBarNotification sbn, final String type){
         Bundle kakaoPushData = sbn.getNotification().extras; // 노티로 넘어오는 푸시메시지 Bundle 데이터
         boolean isMute = sharedPreferences.getBoolean("ttsMuteState", false);
         final String title = kakaoPushData.getString("android.title"); // 카톡푸시메시지 방의 제목
@@ -149,6 +146,7 @@ public class KakaoPushListenerService extends NotificationListenerService {
                 @Override
                 public void execute(Realm realm) {
                     Users users = realm.createObject(Users.class);
+                    users.setType(type);
                     users.setUserId(title);
                     users.setMessage(text);
                     users.setTimeStamp(timeStamp);

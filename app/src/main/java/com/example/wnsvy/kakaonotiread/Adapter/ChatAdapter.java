@@ -67,11 +67,19 @@ public class ChatAdapter extends RealmRecyclerViewAdapter<Users, ChatAdapter.Vie
             viewHolder.userId.setText(users.getUserId());
             viewHolder.message.setText(users.getMessage());
             viewHolder.timeStamp.setText(users.getTimeStamp());
-            Glide.with(context).load(R.drawable.kakaotalk).override(150, 150).into(viewHolder.circleImageView);
+            switch (users.getType()){
+                case "KakaoTalk":
+                    Glide.with(context).load(R.drawable.kakaotalk).override(150, 150).into(viewHolder.circleImageView);
+                    break;
+                case "MMS":
+                    Glide.with(context).load(R.drawable.icon_mms).override(150, 150).into(viewHolder.circleImageView);
+                    break;
+                default:
+            }
             if(users.isRead()){
                 viewHolder.isRead.setVisibility(View.INVISIBLE);
             }else{
-                viewHolder.isRead.setText("1");
+                viewHolder.isRead.setText("읽지않음");
             }
 
             viewHolder.itemView.setOnClickListener(new View.OnClickListener() {
@@ -80,6 +88,8 @@ public class ChatAdapter extends RealmRecyclerViewAdapter<Users, ChatAdapter.Vie
                         Bundle ttsParam = new Bundle();
                         ttsParam.putFloat(KEY_PARAM_VOLUME, 2.0f);
                         textToSpeech.speak(users.getUserId() + "님으로부터 온 메시지는" + users.getMessage() + "입니다", TextToSpeech.QUEUE_FLUSH, ttsParam, "1");
+                        // QUEUE_FLUSH : 큐에 데이터 비운뒤 넣음.
+                        // QUEUE_ADD : 큐에 순차적으로 쌓음
 
                         Realm realm = Realm.getDefaultInstance();
                         realm.executeTransaction(new Realm.Transaction() {
