@@ -9,6 +9,7 @@ public class Users extends RealmObject {
     private String room;
     private boolean isRead;
     private String type;
+    private  boolean isSelected;
 
     public String getUserId() {
         return userId;
@@ -56,5 +57,13 @@ public class Users extends RealmObject {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public boolean isSelected() {
+        return isSelected;
+    }
+
+    public void setSelected(boolean selected) {
+        isSelected = selected;
     }
 }

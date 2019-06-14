@@ -7,6 +7,7 @@ import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
+import android.text.SpannableString;
 import android.text.TextUtils;
 import android.util.Log;
 

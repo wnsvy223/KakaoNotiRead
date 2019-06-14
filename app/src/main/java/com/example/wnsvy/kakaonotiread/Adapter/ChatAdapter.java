@@ -1,30 +1,42 @@
 package com.example.wnsvy.kakaonotiread.Adapter;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import com.bumptech.glide.Glide;
 import com.example.wnsvy.kakaonotiread.Model.Users;
 import com.example.wnsvy.kakaonotiread.R;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import de.hdodenhof.circleimageview.CircleImageView;
 import io.realm.Realm;
 import io.realm.RealmRecyclerViewAdapter;
 import io.realm.RealmResults;
+import io.realm.Sort;
+
+import static android.content.Context.MODE_PRIVATE;
 import static android.speech.tts.TextToSpeech.Engine.KEY_PARAM_VOLUME;
 
 public class ChatAdapter extends RealmRecyclerViewAdapter<Users, ChatAdapter.ViewHolder> {
     private Context context;;
     private RealmResults<Users> realmResults;
     private TextToSpeech textToSpeech;
-    private Realm realm;
+    private boolean isSelectMode; //선택모드 sharedPreference 설정값
+    private SharedPreferences sharedPreferences;
 
     class ViewHolder extends  RecyclerView.ViewHolder{
 
@@ -44,13 +56,14 @@ public class ChatAdapter extends RealmRecyclerViewAdapter<Users, ChatAdapter.Vie
         }
     }
 
-    public ChatAdapter(@Nullable RealmResults<Users> data, boolean autoUpdate, Context context, TextToSpeech textToSpeech, Realm realm) {
+    public ChatAdapter(@Nullable RealmResults<Users> data, boolean autoUpdate, Context context, TextToSpeech textToSpeech, SharedPreferences sharedPreferences, boolean isSelectMode) {
         super(data, autoUpdate);
         setHasStableIds(true);
         this.context = context;
         this.realmResults = data;
         this.textToSpeech = textToSpeech;
-        this.realm = realm;
+        this.sharedPreferences = sharedPreferences;
+        this.isSelectMode = isSelectMode;
     }
 
     @NonNull
@@ -61,7 +74,8 @@ public class ChatAdapter extends RealmRecyclerViewAdapter<Users, ChatAdapter.Vie
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ViewHolder viewHolder, int position) {
+    public void onBindViewHolder(@NonNull final ViewHolder viewHolder, int position) {
+
         if(viewHolder.getAdapterPosition() != RecyclerView.NO_POSITION) {
             final Users users = getItem(position);
             viewHolder.userId.setText(users.getUserId());
@@ -76,25 +90,52 @@ public class ChatAdapter extends RealmRecyclerViewAdapter<Users, ChatAdapter.Vie
                     break;
                 default:
             }
+
+            // 메시지 읽음/읽지않음 처리
             if(users.isRead()){
                 viewHolder.isRead.setVisibility(View.INVISIBLE);
             }else{
                 viewHolder.isRead.setText("읽지않음");
             }
 
+            // 메시지 롱 클릭 선택 처리
+            if(users.isSelected()){
+                highlightView(viewHolder);
+            }else{
+                unhighlightView(viewHolder);
+            }
+
             viewHolder.itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                        Bundle ttsParam = new Bundle();
-                        ttsParam.putFloat(KEY_PARAM_VOLUME, 2.0f);
-                        textToSpeech.speak(users.getUserId() + "님으로부터 온 메시지는" + users.getMessage() + "입니다", TextToSpeech.QUEUE_FLUSH, ttsParam, "1");
-                        // QUEUE_FLUSH : 큐에 데이터 비운뒤 넣음.
-                        // QUEUE_ADD : 큐에 순차적으로 쌓음
-
-                        Realm realm = Realm.getDefaultInstance();
+                    Realm realm = Realm.getDefaultInstance();
+                    if(isSelectMode) { // 선택모드일때 클릭 시 해당 row의 선택값 변경
+                        if(!users.isSelected()){
+                            realm.executeTransaction(new Realm.Transaction() {
+                                @Override
+                                public void execute(@NonNull Realm realm) {
+                                    Users user = realm.where(Users.class).equalTo("timeStamp", users.getTimeStamp()).findFirst();
+                                    if (user != null) {
+                                        user.setSelected(true); // 선택
+                                    }
+                                }
+                            });
+                        }else{
+                            realm.executeTransaction(new Realm.Transaction() {
+                                @Override
+                                public void execute(@NonNull Realm realm) {
+                                    Users user = realm.where(Users.class).equalTo("timeStamp", users.getTimeStamp()).findFirst();
+                                    if (user != null) {
+                                        user.setSelected(false); // 해제
+                                    }
+                                }
+                            });
+                        }
+                    }else {
+                        speechTTS(users.getUserId(), users.getMessage()); // 선택한 메시지 읽기
                         realm.executeTransaction(new Realm.Transaction() {
                             @Override
-                            public void execute (@NonNull Realm realm) {
+                            public void execute(@NonNull Realm realm) {
                                 Users user = realm.where(Users.class).equalTo("timeStamp", users.getTimeStamp()).findFirst();
                                 if (user != null) {
                                     user.setRead(true);
@@ -102,9 +143,37 @@ public class ChatAdapter extends RealmRecyclerViewAdapter<Users, ChatAdapter.Vie
                                 // 클릭한 메시지의 타임스탬프(고유값이므로)로 위치를 찾아 해당 위치의 isRead값 true로 업데이트
                             }
                         });
+                    }
+
+                }
+            });
+
+            viewHolder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    isSelectMode = true; // 선택모드로 변경
+                    highlightView(viewHolder); // 선택된 행 회색 하이라이트 처리
+                    sharedPreferences.edit().putBoolean("isSelectMode",true).apply(); // 선택모드 설정값 true로 변경
+                    return false;
                 }
             });
         }
+    }
+
+    private void speechTTS(String userId,String message){
+        Bundle ttsParam = new Bundle();
+        ttsParam.putFloat(KEY_PARAM_VOLUME, 2.0f);
+        textToSpeech.speak(userId + "님으로부터 온 메시지는" + message + "입니다", TextToSpeech.QUEUE_FLUSH, ttsParam, "1");
+        // QUEUE_FLUSH : 큐에 데이터 비운뒤 넣음.
+        // QUEUE_ADD : 큐에 순차적으로 쌓음
+    }
+
+    private void highlightView(ViewHolder holder) {
+        holder.itemView.setBackgroundColor(ContextCompat.getColor(context, android.R.color.darker_gray)); // 회색 하이라이트 처리
+    }
+
+    private void unhighlightView(ViewHolder holder) {
+        holder.itemView.setBackgroundColor(ContextCompat.getColor(context, android.R.color.transparent)); // 원래 상태로 변경
     }
 
     @Override

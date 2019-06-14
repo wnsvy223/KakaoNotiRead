@@ -3,10 +3,7 @@ package com.example.wnsvy.kakaonotiread.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.media.AudioAttributes;
-import android.media.AudioFocusRequest;
 import android.media.AudioManager;
-import android.os.Build;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.support.annotation.NonNull;
@@ -15,12 +12,9 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.widget.Toast;
 
 import com.example.wnsvy.kakaonotiread.Adapter.ChatAdapter;
-import com.example.wnsvy.kakaonotiread.Adapter.MessageAdapter;
-import com.example.wnsvy.kakaonotiread.Common.CommonApplication;
 import com.example.wnsvy.kakaonotiread.Model.Users;
 import com.example.wnsvy.kakaonotiread.R;
 
@@ -31,9 +25,6 @@ import java.util.Locale;
 import io.realm.Realm;
 import io.realm.RealmResults;
 import io.realm.Sort;
-
-import static android.speech.tts.TextToSpeech.ERROR;
-import static android.speech.tts.TextToSpeech.Engine.KEY_PARAM_VOLUME;
 
 public class ChatActivity extends AppCompatActivity {
 
@@ -72,6 +63,8 @@ public class ChatActivity extends AppCompatActivity {
     public RealmResults<Users> realmResults;
     public RealmResults<Users> allResults;
     public ActionBar actionBar;
+    private ChatAdapter chatAdapter;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -124,6 +117,7 @@ public class ChatActivity extends AppCompatActivity {
             }
         });
 
+
         Intent intent = getIntent();
         String room = intent.getStringExtra("room");
         actionBar.setTitle(room);
@@ -132,7 +126,9 @@ public class ChatActivity extends AppCompatActivity {
         //인탠트로 넘어온 유저의 메시지 전체 조회(동기방식으로 받아와서 사이즈값을 UI스레드에서 받아 스크롤 이동 메소드 실행되도록 함)
         allResults = realm.where(Users.class).equalTo("room",room).sort("timeStamp",Sort.DESCENDING).findAll();
 
-        ChatAdapter chatAdapter = new ChatAdapter(realmResults,true, this, textToSpeech, realm);
+        SharedPreferences sharedPreferences = getSharedPreferences("selectMode",MODE_PRIVATE );
+        boolean isSelectMode = sharedPreferences.getBoolean("isSelectMode",false);
+        chatAdapter = new ChatAdapter(realmResults,true, this, textToSpeech, sharedPreferences, isSelectMode);
         chatAdapter.setHasStableIds(true);
         linearLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
         linearLayoutManager.setReverseLayout(true);
@@ -179,8 +175,21 @@ public class ChatActivity extends AppCompatActivity {
         if(textToSpeech != null){
             //textToSpeech.stop();
         }
+        isSelectedReset(); // 채팅방 화면을 나갈때 해당 방의 메시지들 선택값 모두 false로 리셋
     }
 
+    public void isSelectedReset(){
+        realm.executeTransaction(new Realm.Transaction() {
+            @Override
+            public void execute(Realm realm) {
+                for(int i=0; i<allResults.size(); i++){
+                    allResults.get(i).setSelected(false);
+                }
+            }
+        });
+        SharedPreferences sharedPreferences = getSharedPreferences("selectMode",MODE_PRIVATE );
+        sharedPreferences.edit().putBoolean("isSelectMode",false).apply();
+    }
 
     @Override
     public void onBackPressed() {
@@ -195,7 +204,11 @@ public class ChatActivity extends AppCompatActivity {
             Intent intent = getIntent();
             String room = intent.getStringExtra("room");
             realmResults = realm.where(Users.class).equalTo("room", room).sort("timeStamp", Sort.DESCENDING).limit(position + 20).findAll();
-            ChatAdapter chatAdapter = new ChatAdapter(realmResults, true, this, textToSpeech, realm);
+            // 해당 채팅방 메시지의 현재 메시지에 +20해서 추가 로딩
+            SharedPreferences sharedPreferences = getSharedPreferences("selectMode",MODE_PRIVATE );
+            boolean isSelectMode = sharedPreferences.getBoolean("isSelectMode",false);
+            // 추가 로딩 시 선택모드 풀리지 않도록 롱클릭 시에 sharedPreferences로 저장한값을 가져온뒤 어댑터에 넘겨줌 (true로 넘어감)
+            chatAdapter = new ChatAdapter(realmResults, true, this, textToSpeech, sharedPreferences, isSelectMode);
             recyclerView.setAdapter(chatAdapter);
             recyclerView.scrollToPosition(realmResults.size() - 5);
         }
