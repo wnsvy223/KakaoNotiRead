@@ -12,6 +12,9 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.Toast;
 
 import com.example.wnsvy.kakaonotiread.Adapter.ChatAdapter;
@@ -25,6 +28,8 @@ import java.util.Locale;
 import io.realm.Realm;
 import io.realm.RealmResults;
 import io.realm.Sort;
+
+import static android.speech.tts.TextToSpeech.Engine.KEY_PARAM_VOLUME;
 
 public class ChatActivity extends AppCompatActivity {
 
@@ -203,15 +208,57 @@ public class ChatActivity extends AppCompatActivity {
         }else {
             Intent intent = getIntent();
             String room = intent.getStringExtra("room");
-            realmResults = realm.where(Users.class).equalTo("room", room).sort("timeStamp", Sort.DESCENDING).limit(position + 20).findAll();
+            RealmResults<Users> loadMoreResults = realm.where(Users.class).equalTo("room", room).sort("timeStamp", Sort.DESCENDING).limit(position + 20).findAll();
             // 해당 채팅방 메시지의 현재 메시지에 +20해서 추가 로딩
             SharedPreferences sharedPreferences = getSharedPreferences("selectMode",MODE_PRIVATE );
             boolean isSelectMode = sharedPreferences.getBoolean("isSelectMode",false);
             // 추가 로딩 시 선택모드 풀리지 않도록 롱클릭 시에 sharedPreferences로 저장한값을 가져온뒤 어댑터에 넘겨줌 (true로 넘어감)
-            chatAdapter = new ChatAdapter(realmResults, true, this, textToSpeech, sharedPreferences, isSelectMode);
+            chatAdapter = new ChatAdapter(loadMoreResults, true, this, textToSpeech, sharedPreferences, isSelectMode);
             recyclerView.setAdapter(chatAdapter);
-            recyclerView.scrollToPosition(realmResults.size() - 5);
+            recyclerView.scrollToPosition(loadMoreResults.size() - position);
         }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_chat, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.action_read) {
+            speechSeletedMessage(); // 선택된 메시지 읽기
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    public void speechSeletedMessage(){
+        final RealmResults<Users> results = realm.where(Users.class).equalTo("isSelected",true).sort("timeStamp",Sort.DESCENDING).findAll();
+        for(int i=0; i<results.size(); i++){
+                Bundle ttsParam = new Bundle();
+                ttsParam.putFloat(KEY_PARAM_VOLUME, 2.0f);
+                textToSpeech.speak(results.get(i).getUserId() + "님으로부터 온" + (i+1) + "번" + "메시지는" + results.get(i).getMessage() + "입니다", TextToSpeech.QUEUE_ADD, ttsParam, "1");
+                // QUEUE_FLUSH : 큐에 데이터 비운뒤 넣음.
+                // QUEUE_ADD : 큐에 순차적으로 쌓음
+        }
+
+        realm.executeTransaction(new Realm.Transaction() {
+            @Override
+            public void execute(@NonNull Realm realm) {
+                for(int i=0; i<results.size(); i++){
+                    results.get(i).setRead(true);
+                }
+            }
+        });
     }
 
     // RealmResults<Users> to List<Model> 변환 메소드
@@ -219,7 +266,7 @@ public class ChatActivity extends AppCompatActivity {
         List<Users> list = new ArrayList<>();
         try {
             realm = Realm.getDefaultInstance();
-            RealmResults<Users> results = realm.where(Users.class).sort("timeStamp",Sort.DESCENDING).findAllAsync();
+            RealmResults<Users> results = realm.where(Users.class).sort("timeStamp",Sort.DESCENDING).findAllAsync(); // 비동기 쿼리
             list.addAll(realm.copyFromRealm(results));
         } finally {
             if (realm != null) {
