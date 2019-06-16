@@ -3,7 +3,10 @@ package com.example.wnsvy.kakaonotiread.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.media.AudioAttributes;
+import android.media.AudioFocusRequest;
 import android.media.AudioManager;
+import android.media.MediaPlayer;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.support.annotation.NonNull;
@@ -37,6 +40,11 @@ public class ChatActivity extends AppCompatActivity {
     public RecyclerView recyclerView;
     private TextToSpeech textToSpeech;
     private AudioManager audioManager;
+    public LinearLayoutManager linearLayoutManager;
+    public RealmResults<Users> realmResults;
+    public RealmResults<Users> allResults;
+    public ActionBar actionBar;
+    private ChatAdapter chatAdapter;
     private AudioManager.OnAudioFocusChangeListener audioFocusChangeListener
             = new AudioManager.OnAudioFocusChangeListener() {
         @Override
@@ -44,17 +52,20 @@ public class ChatActivity extends AppCompatActivity {
             switch (focusChange){
                 case AudioManager.AUDIOFOCUS_GAIN: //오디오 포커스 영구 획득
                     audioManager.setStreamVolume(AudioManager.STREAM_MUSIC,
-                            audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC),
+                            audioManager.getStreamVolume(AudioManager.STREAM_MUSIC),
                             AudioManager.FLAG_PLAY_SOUND);
                     break;
                 case AudioManager.AUDIOFOCUS_GAIN_TRANSIENT: // 오디오 포커스 일시 획득(15초 내외)
-                    audioManager.setStreamVolume(AudioManager.STREAM_MUSIC,0,AudioManager.FLAG_PLAY_SOUND);
+                    audioManager.setStreamVolume(AudioManager.STREAM_MUSIC,
+                            audioManager.getStreamVolume(AudioManager.STREAM_MUSIC),
+                            AudioManager.FLAG_PLAY_SOUND);
                     //재생중인 미디어 볼륨 처리
                     break;
                 case AudioManager.AUDIOFOCUS_LOSS: // 오디오 포커스 영구 손실
                     //재생중인 미디어 일시정지 처리
                     break;
                 case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT: // 오디오 포커스 일시 손실(15초 내외)
+                    audioManager.setStreamVolume(AudioManager.STREAM_MUSIC,0,AudioManager.FLAG_PLAY_SOUND);
                     //재생중인 미디어 일시정지 처리
                     break;
                 case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK: // 오디오 포커스 일시 손실 (45초 내외)
@@ -64,12 +75,6 @@ public class ChatActivity extends AppCompatActivity {
             }
         }
     };
-    public LinearLayoutManager linearLayoutManager;
-    public RealmResults<Users> realmResults;
-    public RealmResults<Users> allResults;
-    public ActionBar actionBar;
-    private ChatAdapter chatAdapter;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -104,16 +109,34 @@ public class ChatActivity extends AppCompatActivity {
         textToSpeech.setOnUtteranceProgressListener(new UtteranceProgressListener() {
             @Override
             public void onStart(String utteranceId) {
-                audioManager.requestAudioFocus(audioFocusChangeListener,
-                        AudioManager.STREAM_MUSIC,
-                        AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
-                // TTS 읽기 시작하면 audioFocusChangeListener 의 AUDIOFOCUS_GAIN_TRANSIENT 조건 수행으로 미디어 볼륨 0
+                /*
+                audioManager.requestAudioFocus(new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT) // 8.0 이후
+                        .setAudioAttributes(new AudioAttributes.Builder()
+                                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                                .setUsage(AudioAttributes.USAGE_MEDIA)
+                                .build())
+                        .setAcceptsDelayedFocusGain(true)
+                        .setWillPauseWhenDucked(true)
+                        .setOnAudioFocusChangeListener(audioFocusChangeListener)
+                        .build());
+               */
+                audioManager.requestAudioFocus(audioFocusChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);  // 8.0 이전
             }
 
             @Override
             public void onDone(String utteranceId) {
-                audioManager.abandonAudioFocus(audioFocusChangeListener);
-                // TTS 읽기 끝나면 audioFocusChangeListener 제거하여 다시 미디어 재생
+                /*
+                audioManager.requestAudioFocus(new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_LOSS_TRANSIENT)   // 8.0 이후
+                        .setAudioAttributes(new AudioAttributes.Builder()
+                                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                                .setUsage(AudioAttributes.USAGE_MEDIA)
+                                .build())
+                        .setAcceptsDelayedFocusGain(true)
+                        .setWillPauseWhenDucked(true)
+                        .setOnAudioFocusChangeListener(audioFocusChangeListener)
+                        .build());
+                */
+                audioManager.abandonAudioFocus(audioFocusChangeListener); // 8.0 이전
             }
 
             @Override
@@ -199,6 +222,7 @@ public class ChatActivity extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         super.onBackPressed();
+
         finish();
     }
 
@@ -234,18 +258,30 @@ public class ChatActivity extends AppCompatActivity {
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_read) {
-            speechSeletedMessage(); // 선택된 메시지 읽기
-            return true;
+        switch (id){
+            case R.id.action_read:
+                RealmResults<Users> results = realm.where(Users.class).equalTo("isSelected",true).sort("timeStamp",Sort.DESCENDING).findAll(); // 선택된 메시지 쿼리
+                speechSeletedMessage(results); // 선택된 메시지 읽기
+                break;
+            case R.id.action_pause:
+                speechMessage(""); // 빈 메시지 읽게해서 오디오 포커싱이 바로 미디어로 이동하게 하여 멈춤효과
+                break;
+            default:
         }
+
         return super.onOptionsItemSelected(item);
     }
 
-    public void speechSeletedMessage(){
-        final RealmResults<Users> results = realm.where(Users.class).equalTo("isSelected",true).sort("timeStamp",Sort.DESCENDING).findAll();
+    public void speechMessage(String message){
+        Bundle ttsParam = new Bundle();
+        ttsParam.putFloat(KEY_PARAM_VOLUME, 0.5f);
+        textToSpeech.speak(message, TextToSpeech.QUEUE_FLUSH, ttsParam, "1");
+    }
+
+    public void speechSeletedMessage(final RealmResults<Users> results){
         for(int i=0; i<results.size(); i++){
                 Bundle ttsParam = new Bundle();
-                ttsParam.putFloat(KEY_PARAM_VOLUME, 2.0f);
+                ttsParam.putFloat(KEY_PARAM_VOLUME, 0.5f);
                 textToSpeech.speak(results.get(i).getUserId() + "님으로부터 온" + (i+1) + "번" + "메시지는" + results.get(i).getMessage() + "입니다", TextToSpeech.QUEUE_ADD, ttsParam, "1");
                 // QUEUE_FLUSH : 큐에 데이터 비운뒤 넣음.
                 // QUEUE_ADD : 큐에 순차적으로 쌓음
@@ -255,7 +291,7 @@ public class ChatActivity extends AppCompatActivity {
             @Override
             public void execute(@NonNull Realm realm) {
                 for(int i=0; i<results.size(); i++){
-                    results.get(i).setRead(true);
+                    results.get(i).setRead(true); // 선택된 메시지들 모두 읽음 처리
                 }
             }
         });

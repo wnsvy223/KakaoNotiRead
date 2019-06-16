@@ -162,7 +162,7 @@ public class ChatAdapter extends RealmRecyclerViewAdapter<Users, ChatAdapter.Vie
 
     private void speechTTS(String userId,String message){
         Bundle ttsParam = new Bundle();
-        ttsParam.putFloat(KEY_PARAM_VOLUME, 2.0f);
+        ttsParam.putFloat(KEY_PARAM_VOLUME, 0.5f);
         textToSpeech.speak(userId + "님으로부터 온 메시지는" + message + "입니다", TextToSpeech.QUEUE_FLUSH, ttsParam, "1");
         // QUEUE_FLUSH : 큐에 데이터 비운뒤 넣음.
         // QUEUE_ADD : 큐에 순차적으로 쌓음

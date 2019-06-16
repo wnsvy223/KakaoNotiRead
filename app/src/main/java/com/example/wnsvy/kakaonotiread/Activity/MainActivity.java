@@ -8,6 +8,8 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
+import android.media.AudioAttributes;
+import android.media.AudioFocusRequest;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
@@ -63,11 +65,10 @@ public class MainActivity extends AppCompatActivity {
             switch (focusChange){
                 case AudioManager.AUDIOFOCUS_GAIN: //오디오 포커스 영구 획득
                     audioManager.setStreamVolume(AudioManager.STREAM_MUSIC,
-                            audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC),
+                            audioManager.getStreamVolume(AudioManager.STREAM_MUSIC),
                             AudioManager.FLAG_PLAY_SOUND);
                     break;
                 case AudioManager.AUDIOFOCUS_GAIN_TRANSIENT: // 오디오 포커스 일시 획득(15초 내외)
-                    audioManager.setStreamVolume(AudioManager.STREAM_MUSIC,0,AudioManager.FLAG_PLAY_SOUND);
                     //재생중인 미디어 볼륨 처리
                     break;
                 case AudioManager.AUDIOFOCUS_LOSS: // 오디오 포커스 영구 손실
@@ -103,16 +104,34 @@ public class MainActivity extends AppCompatActivity {
         textToSpeech.setOnUtteranceProgressListener(new UtteranceProgressListener() {
             @Override
             public void onStart(String utteranceId) {
-                audioManager.requestAudioFocus(audioFocusChangeListener,
-                        AudioManager.STREAM_MUSIC,
-                        AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
-                // TTS 읽기 시작하면 audioFocusChangeListener 의 AUDIOFOCUS_GAIN_TRANSIENT 조건 수행으로 미디어 볼륨 0
+                /*
+                audioManager.requestAudioFocus(new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT) // 8.0 이후
+                        .setAudioAttributes(new AudioAttributes.Builder()
+                                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                                .setUsage(AudioAttributes.USAGE_MEDIA)
+                                .build())
+                        .setAcceptsDelayedFocusGain(true)
+                        .setWillPauseWhenDucked(true)
+                        .setOnAudioFocusChangeListener(audioFocusChangeListener)
+                        .build());
+               */
+                audioManager.requestAudioFocus(audioFocusChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);  // 8.0 이전
             }
 
             @Override
             public void onDone(String utteranceId) {
-                audioManager.abandonAudioFocus(audioFocusChangeListener);
-                // TTS 읽기 끝나면 audioFocusChangeListener 제거하여 다시 미디어 재생
+                /*
+                audioManager.requestAudioFocus(new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_LOSS_TRANSIENT)   // 8.0 이후
+                        .setAudioAttributes(new AudioAttributes.Builder()
+                                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                                .setUsage(AudioAttributes.USAGE_MEDIA)
+                                .build())
+                        .setAcceptsDelayedFocusGain(true)
+                        .setWillPauseWhenDucked(true)
+                        .setOnAudioFocusChangeListener(audioFocusChangeListener)
+                        .build());
+                */
+                audioManager.abandonAudioFocus(audioFocusChangeListener); // 8.0 이전
             }
 
             @Override

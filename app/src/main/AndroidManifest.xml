@@ -26,6 +26,8 @@
         <activity
             android:name=".Activity.MessageActivity"
             android:label="@string/app_name"
+            android:icon="@mipmap/ic_launcher_mouth"
+            android:roundIcon="@mipmap/ic_launcher_mouth"
             android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

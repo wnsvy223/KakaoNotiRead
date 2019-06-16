@@ -8,5 +8,6 @@
     <string name="mute">음소거</string>
     <string name="action_settings">설정하기</string>
     <string name="title_activity_message">메시지</string>
-    <string name="action_read_ten">읽기</string>
+    <string name="action_read">읽기</string>
+    <string name="action_pause">중지</string>
 </resources>
