@@ -2,9 +2,11 @@ package com.example.wnsvy.kakaonotiread.Adapter;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -95,6 +97,37 @@ public class MessageAdapter extends RealmRecyclerViewAdapter<Users, MessageAdapt
                         //context.startActivity(intent);
                         ((Activity)context).startActivityForResult(intent, 1);
                         // ChatActivity에서 메시지를 읽고 카운트값을 줄인후 갱신을 위해 호출( => 이 방법보다 콜백인터페이스가 정상적인 방법이라고 함)
+                }
+            });
+
+            viewHolder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+
+                    AlertDialog.Builder builder = new AlertDialog.Builder(context);
+                    builder.setTitle("메시지 삭제");
+                    builder.setMessage("해당 채팅방의 모든 메시지를 삭제 하시겠습니까?");
+                    builder.setPositiveButton("확인",
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int which) {
+                                    realm.executeTransaction(new Realm.Transaction() {
+                                        @Override
+                                        public void execute(Realm realm) {
+                                            RealmResults<Users> result = realm.where(Users.class).equalTo("room",users.getRoom()).findAll();
+                                            result.deleteAllFromRealm();
+                                        }
+                                    });
+                                }
+                            });
+                    builder.setNegativeButton("취소",
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int which) {
+
+                                }
+                            });
+                    builder.show();
+
+                    return false;
                 }
             });
         }

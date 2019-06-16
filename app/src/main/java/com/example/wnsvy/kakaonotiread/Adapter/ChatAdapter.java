@@ -35,8 +35,6 @@ public class ChatAdapter extends RealmRecyclerViewAdapter<Users, ChatAdapter.Vie
     private Context context;;
     private RealmResults<Users> realmResults;
     private TextToSpeech textToSpeech;
-    private boolean isSelectMode; //선택모드 sharedPreference 설정값
-    private SharedPreferences sharedPreferences;
 
     class ViewHolder extends  RecyclerView.ViewHolder{
 
@@ -56,14 +54,12 @@ public class ChatAdapter extends RealmRecyclerViewAdapter<Users, ChatAdapter.Vie
         }
     }
 
-    public ChatAdapter(@Nullable RealmResults<Users> data, boolean autoUpdate, Context context, TextToSpeech textToSpeech, SharedPreferences sharedPreferences, boolean isSelectMode) {
+    public ChatAdapter(@Nullable RealmResults<Users> data, boolean autoUpdate, Context context, TextToSpeech textToSpeech) {
         super(data, autoUpdate);
         setHasStableIds(true);
         this.context = context;
         this.realmResults = data;
         this.textToSpeech = textToSpeech;
-        this.sharedPreferences = sharedPreferences;
-        this.isSelectMode = isSelectMode;
     }
 
     @NonNull
@@ -109,6 +105,8 @@ public class ChatAdapter extends RealmRecyclerViewAdapter<Users, ChatAdapter.Vie
                 @Override
                 public void onClick(View view) {
                     Realm realm = Realm.getDefaultInstance();
+                    SharedPreferences sharedPreferences = context.getSharedPreferences("selectMode",MODE_PRIVATE );
+                    boolean isSelectMode = sharedPreferences.getBoolean("isSelectMode",false);
                     if(isSelectMode) { // 선택모드일때 클릭 시 해당 row의 선택값 변경
                         if(!users.isSelected()){
                             realm.executeTransaction(new Realm.Transaction() {
@@ -151,8 +149,8 @@ public class ChatAdapter extends RealmRecyclerViewAdapter<Users, ChatAdapter.Vie
             viewHolder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View v) {
-                    isSelectMode = true; // 선택모드로 변경
                     highlightView(viewHolder); // 선택된 행 회색 하이라이트 처리
+                    SharedPreferences sharedPreferences = context.getSharedPreferences("selectMode",MODE_PRIVATE );
                     sharedPreferences.edit().putBoolean("isSelectMode",true).apply(); // 선택모드 설정값 true로 변경
                     return false;
                 }

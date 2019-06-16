@@ -3,10 +3,7 @@ package com.example.wnsvy.kakaonotiread.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.media.AudioAttributes;
-import android.media.AudioFocusRequest;
 import android.media.AudioManager;
-import android.media.MediaPlayer;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.support.annotation.NonNull;
@@ -15,7 +12,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
@@ -75,6 +71,8 @@ public class ChatActivity extends AppCompatActivity {
             }
         }
     };
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -156,7 +154,7 @@ public class ChatActivity extends AppCompatActivity {
 
         SharedPreferences sharedPreferences = getSharedPreferences("selectMode",MODE_PRIVATE );
         boolean isSelectMode = sharedPreferences.getBoolean("isSelectMode",false);
-        chatAdapter = new ChatAdapter(realmResults,true, this, textToSpeech, sharedPreferences, isSelectMode);
+        chatAdapter = new ChatAdapter(realmResults,true, this, textToSpeech);
         chatAdapter.setHasStableIds(true);
         linearLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
         linearLayoutManager.setReverseLayout(true);
@@ -221,9 +219,14 @@ public class ChatActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        super.onBackPressed();
-
-        finish();
+        SharedPreferences sharedPreferences = getSharedPreferences("selectMode",MODE_PRIVATE );
+        boolean isSelectMode = sharedPreferences.getBoolean("isSelectMode",false);
+        if(isSelectMode){
+            isSelectedReset(); // 선택모드 상태면 선택모드 상태 해제
+        }else{
+            super.onBackPressed(); // 선택모드 상태가 아니면 종료
+            finish();
+        }
     }
 
     public void loadMore(int position){
@@ -237,7 +240,7 @@ public class ChatActivity extends AppCompatActivity {
             SharedPreferences sharedPreferences = getSharedPreferences("selectMode",MODE_PRIVATE );
             boolean isSelectMode = sharedPreferences.getBoolean("isSelectMode",false);
             // 추가 로딩 시 선택모드 풀리지 않도록 롱클릭 시에 sharedPreferences로 저장한값을 가져온뒤 어댑터에 넘겨줌 (true로 넘어감)
-            chatAdapter = new ChatAdapter(loadMoreResults, true, this, textToSpeech, sharedPreferences, isSelectMode);
+            chatAdapter = new ChatAdapter(loadMoreResults, true, this, textToSpeech);
             recyclerView.setAdapter(chatAdapter);
             recyclerView.scrollToPosition(loadMoreResults.size() - position);
         }
@@ -252,19 +255,18 @@ public class ChatActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
         switch (id){
             case R.id.action_read:
                 RealmResults<Users> results = realm.where(Users.class).equalTo("isSelected",true).sort("timeStamp",Sort.DESCENDING).findAll(); // 선택된 메시지 쿼리
                 speechSeletedMessage(results); // 선택된 메시지 읽기
                 break;
             case R.id.action_pause:
-                speechMessage(""); // 빈 메시지 읽게해서 오디오 포커싱이 바로 미디어로 이동하게 하여 멈춤효과
+                SharedPreferences sharedPreferences = getSharedPreferences("selectMode",MODE_PRIVATE );
+                boolean isSelectMode = sharedPreferences.getBoolean("isSelectMode",false);
+                if(isSelectMode) {
+                    speechMessage(""); // 빈 메시지 읽게해서 오디오 포커싱이 바로 미디어로 이동하게 하여 멈춤효과
+                }
                 break;
             default:
         }
