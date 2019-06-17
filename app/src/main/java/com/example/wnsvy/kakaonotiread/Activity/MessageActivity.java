@@ -19,11 +19,11 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
-
 import com.example.wnsvy.kakaonotiread.Adapter.MessageAdapter;
 import com.example.wnsvy.kakaonotiread.Model.Users;
 import com.example.wnsvy.kakaonotiread.R;
-
+import java.util.ArrayList;
+import java.util.List;
 import io.realm.Realm;
 import io.realm.RealmResults;
 import io.realm.Sort;
@@ -32,7 +32,6 @@ public class MessageActivity extends AppCompatActivity {
 
     private Realm realm;
     public RecyclerView recyclerView;
-    private RealmResults<Users> result;
     public MessageAdapter messageAdapter;
 
     @Override
@@ -64,8 +63,9 @@ public class MessageActivity extends AppCompatActivity {
         // 타임스탬프로 내림차순 정렬 후 방이름 중복 제거 : 각 채팅방의 마지막 메시지만 출력하기 위함
 
         messageAdapter = new MessageAdapter(results,true, this, realm);
-        //messageAdapter.setHasStableIds(true);
+        messageAdapter.setHasStableIds(true);
         recyclerView.setAdapter(messageAdapter);
+
     }
 
     private void setCollapsingToolbarLayout(){
@@ -129,6 +129,20 @@ public class MessageActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         realm.close();
+    }
+
+    // RealmResults<Users> to List<Model> 변환 메소드
+    public List<Users> getModelLIst(RealmResults<Users> results){
+        List<Users> list = new ArrayList<>();
+        try {
+            realm = Realm.getDefaultInstance();
+            list.addAll(realm.copyFromRealm(results));
+        } finally {
+            if (realm != null) {
+                realm.close();
+            }
+        }
+        return list;
     }
 
 }

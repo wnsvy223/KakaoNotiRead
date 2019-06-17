@@ -31,12 +31,12 @@ import io.realm.Sort;
 import static android.content.Context.MODE_PRIVATE;
 import static android.speech.tts.TextToSpeech.Engine.KEY_PARAM_VOLUME;
 
-public class ChatAdapter extends RealmRecyclerViewAdapter<Users, ChatAdapter.ViewHolder> {
+public class ChatAdapter extends RealmRecyclerViewAdapter<Users, ChatAdapter.ViewHolder>{
     private Context context;;
     private RealmResults<Users> realmResults;
     private TextToSpeech textToSpeech;
 
-    class ViewHolder extends  RecyclerView.ViewHolder{
+    class ViewHolder extends  RecyclerView.ViewHolder implements View.OnClickListener, View.OnLongClickListener{
 
         private TextView userId;
         private TextView message;
@@ -51,6 +51,59 @@ public class ChatAdapter extends RealmRecyclerViewAdapter<Users, ChatAdapter.Vie
             timeStamp = itemView.findViewById(R.id.tvTime);
             circleImageView = itemView.findViewById(R.id.ivUser);
             isRead = itemView.findViewById(R.id.isRead);
+            itemView.setOnClickListener(this);
+            itemView.setOnLongClickListener(this);
+        }
+
+        @Override
+        public void onClick(View v) {
+            Realm realm = Realm.getDefaultInstance();
+            final Users users = getItem(getAdapterPosition());
+            SharedPreferences sharedPreferences = context.getSharedPreferences("selectMode",MODE_PRIVATE );
+            boolean isSelectMode = sharedPreferences.getBoolean("isSelectMode",false);
+            if(isSelectMode) { // 선택모드일때 클릭 시 해당 row의 선택값 변경
+                if(!users.isSelected()){
+                    realm.executeTransaction(new Realm.Transaction() {
+                        @Override
+                        public void execute(@NonNull Realm realm) {
+                            Users user = realm.where(Users.class).equalTo("timeStamp", users.getTimeStamp()).findFirst();
+                            if (user != null) {
+                                user.setSelected(true); // 선택
+                            }
+                        }
+                    });
+                }else{
+                    realm.executeTransaction(new Realm.Transaction() {
+                        @Override
+                        public void execute(@NonNull Realm realm) {
+                            Users user = realm.where(Users.class).equalTo("timeStamp", users.getTimeStamp()).findFirst();
+                            if (user != null) {
+                                user.setSelected(false); // 해제
+                            }
+                        }
+                    });
+                }
+            }else {
+                speechTTS(users.getUserId(), users.getMessage()); // 선택한 메시지 읽기
+                realm.executeTransaction(new Realm.Transaction() {
+                    @Override
+                    public void execute(@NonNull Realm realm) {
+                        Users user = realm.where(Users.class).equalTo("timeStamp", users.getTimeStamp()).findFirst();
+                        if (user != null) {
+                            user.setRead(true);
+                        }
+                        // 클릭한 메시지의 타임스탬프(고유값이므로)로 위치를 찾아 해당 위치의 isRead값 true로 업데이트
+                    }
+                });
+            }
+        }
+
+        @Override
+        public boolean onLongClick(View v) {
+            itemView.setBackgroundColor(ContextCompat.getColor(context, android.R.color.darker_gray)); // 선택된 행 회색 하이라이트 처리
+            SharedPreferences sharedPreferences = context.getSharedPreferences("selectMode",MODE_PRIVATE );
+            sharedPreferences.edit().putBoolean("isSelectMode",true).apply(); // 선택모드 설정값 true로 변경
+            return false;
         }
     }
 
@@ -70,7 +123,7 @@ public class ChatAdapter extends RealmRecyclerViewAdapter<Users, ChatAdapter.Vie
     }
 
     @Override
-    public void onBindViewHolder(@NonNull final ViewHolder viewHolder, int position) {
+    public void onBindViewHolder(@NonNull ViewHolder viewHolder, int position) {
 
         if(viewHolder.getAdapterPosition() != RecyclerView.NO_POSITION) {
             final Users users = getItem(position);
@@ -101,60 +154,6 @@ public class ChatAdapter extends RealmRecyclerViewAdapter<Users, ChatAdapter.Vie
                 unhighlightView(viewHolder);
             }
 
-            viewHolder.itemView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    Realm realm = Realm.getDefaultInstance();
-                    SharedPreferences sharedPreferences = context.getSharedPreferences("selectMode",MODE_PRIVATE );
-                    boolean isSelectMode = sharedPreferences.getBoolean("isSelectMode",false);
-                    if(isSelectMode) { // 선택모드일때 클릭 시 해당 row의 선택값 변경
-                        if(!users.isSelected()){
-                            realm.executeTransaction(new Realm.Transaction() {
-                                @Override
-                                public void execute(@NonNull Realm realm) {
-                                    Users user = realm.where(Users.class).equalTo("timeStamp", users.getTimeStamp()).findFirst();
-                                    if (user != null) {
-                                        user.setSelected(true); // 선택
-                                    }
-                                }
-                            });
-                        }else{
-                            realm.executeTransaction(new Realm.Transaction() {
-                                @Override
-                                public void execute(@NonNull Realm realm) {
-                                    Users user = realm.where(Users.class).equalTo("timeStamp", users.getTimeStamp()).findFirst();
-                                    if (user != null) {
-                                        user.setSelected(false); // 해제
-                                    }
-                                }
-                            });
-                        }
-                    }else {
-                        speechTTS(users.getUserId(), users.getMessage()); // 선택한 메시지 읽기
-                        realm.executeTransaction(new Realm.Transaction() {
-                            @Override
-                            public void execute(@NonNull Realm realm) {
-                                Users user = realm.where(Users.class).equalTo("timeStamp", users.getTimeStamp()).findFirst();
-                                if (user != null) {
-                                    user.setRead(true);
-                                }
-                                // 클릭한 메시지의 타임스탬프(고유값이므로)로 위치를 찾아 해당 위치의 isRead값 true로 업데이트
-                            }
-                        });
-                    }
-
-                }
-            });
-
-            viewHolder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
-                @Override
-                public boolean onLongClick(View v) {
-                    highlightView(viewHolder); // 선택된 행 회색 하이라이트 처리
-                    SharedPreferences sharedPreferences = context.getSharedPreferences("selectMode",MODE_PRIVATE );
-                    sharedPreferences.edit().putBoolean("isSelectMode",true).apply(); // 선택모드 설정값 true로 변경
-                    return false;
-                }
-            });
         }
     }
 

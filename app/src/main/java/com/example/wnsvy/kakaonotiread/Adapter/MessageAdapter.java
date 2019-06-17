@@ -19,6 +19,8 @@ import com.example.wnsvy.kakaonotiread.Activity.ChatActivity;
 import com.example.wnsvy.kakaonotiread.Model.Users;
 import com.example.wnsvy.kakaonotiread.R;
 
+import java.util.List;
+
 import de.hdodenhof.circleimageview.CircleImageView;
 import io.realm.Realm;
 import io.realm.RealmRecyclerViewAdapter;
@@ -30,7 +32,7 @@ public class MessageAdapter extends RealmRecyclerViewAdapter<Users, MessageAdapt
     private RealmResults realmResults;
     private Realm realm;
 
-    class ViewHolder extends  RecyclerView.ViewHolder{
+    class ViewHolder extends  RecyclerView.ViewHolder implements View.OnLongClickListener, View.OnClickListener{
 
         private TextView room;
         private TextView message;
@@ -45,7 +47,48 @@ public class MessageAdapter extends RealmRecyclerViewAdapter<Users, MessageAdapt
             timeStamp = itemView.findViewById(R.id.timeStamp);
             badgeCount = itemView.findViewById(R.id.badgecount);
             circleImageView = itemView.findViewById(R.id.imgView);
+            itemView.setOnClickListener(this);
+            itemView.setOnLongClickListener(this);
         }
+
+
+        @Override
+        public void onClick(View v) {
+            Intent intent = new Intent(context, ChatActivity.class);
+            intent.putExtra("room", getItem(getAdapterPosition()).getRoom());
+            //context.startActivity(intent);
+            ((Activity)context).startActivityForResult(intent, 1);
+            // ChatActivity에서 메시지를 읽고 카운트값을 줄인후 갱신을 위해 호출( => 이 방법보다 콜백인터페이스가 정상적인 방법이라고 함)
+        }
+
+        @Override
+        public boolean onLongClick(View v) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(context,R.style.AlertDialogCustom);
+            builder.setTitle("메시지 삭제");
+            builder.setMessage("해당 채팅방의 모든 메시지를 삭제 하시겠습니까?");
+            builder.setPositiveButton("확인",
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            realm.executeTransaction(new Realm.Transaction() {
+                                @Override
+                                public void execute(Realm realm) {
+                                    RealmResults<Users> result = realm.where(Users.class).equalTo("room",getItem(getAdapterPosition()).getRoom()).findAll();
+                                    result.deleteAllFromRealm();
+                                }
+                            });
+                        }
+                    });
+            builder.setNegativeButton("취소",
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+
+                        }
+                    });
+            builder.show();
+
+            return false;
+        }
+
     }
 
     public MessageAdapter(@Nullable RealmResults<Users> data, boolean autoUpdate, Context context, Realm realm) {
@@ -66,7 +109,7 @@ public class MessageAdapter extends RealmRecyclerViewAdapter<Users, MessageAdapt
     @Override
     public void onBindViewHolder(@NonNull ViewHolder viewHolder, int position) {
         if(viewHolder.getAdapterPosition() != RecyclerView.NO_POSITION) {
-            final Users users = getItem(position);
+            Users users = getItem(position);
             viewHolder.room.setText(users.getRoom());
             viewHolder.message.setText(users.getMessage());
             viewHolder.timeStamp.setText(users.getTimeStamp());
@@ -89,47 +132,6 @@ public class MessageAdapter extends RealmRecyclerViewAdapter<Users, MessageAdapt
                 viewHolder.badgeCount.setText(String.valueOf(res.size()));
             }
 
-            viewHolder.itemView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                        Intent intent = new Intent(context, ChatActivity.class);
-                        intent.putExtra("room", users.getRoom());
-                        //context.startActivity(intent);
-                        ((Activity)context).startActivityForResult(intent, 1);
-                        // ChatActivity에서 메시지를 읽고 카운트값을 줄인후 갱신을 위해 호출( => 이 방법보다 콜백인터페이스가 정상적인 방법이라고 함)
-                }
-            });
-
-            viewHolder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
-                @Override
-                public boolean onLongClick(View v) {
-
-                    AlertDialog.Builder builder = new AlertDialog.Builder(context);
-                    builder.setTitle("메시지 삭제");
-                    builder.setMessage("해당 채팅방의 모든 메시지를 삭제 하시겠습니까?");
-                    builder.setPositiveButton("확인",
-                            new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialog, int which) {
-                                    realm.executeTransaction(new Realm.Transaction() {
-                                        @Override
-                                        public void execute(Realm realm) {
-                                            RealmResults<Users> result = realm.where(Users.class).equalTo("room",users.getRoom()).findAll();
-                                            result.deleteAllFromRealm();
-                                        }
-                                    });
-                                }
-                            });
-                    builder.setNegativeButton("취소",
-                            new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialog, int which) {
-
-                                }
-                            });
-                    builder.show();
-
-                    return false;
-                }
-            });
         }
     }
 

@@ -1,6 +1,7 @@
 package com.example.wnsvy.kakaonotiread.Activity;
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.media.AudioManager;
@@ -8,10 +9,12 @@ import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.support.annotation.NonNull;
 import android.support.v7.app.ActionBar;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
@@ -180,6 +183,9 @@ public class ChatActivity extends AppCompatActivity {
                 }
             }
         });
+
+        RealmResults<Users> unReadAllResults = realm.where(Users.class).equalTo("room",room).equalTo("isRead",false).sort("timeStamp",Sort.DESCENDING).findAll();
+        showDialog(unReadAllResults); // 액티비티 진입시 읽지 않은 전체 메시지 읽을지 묻는 다이얼로그 호출
     }
 
 
@@ -292,11 +298,33 @@ public class ChatActivity extends AppCompatActivity {
         realm.executeTransaction(new Realm.Transaction() {
             @Override
             public void execute(@NonNull Realm realm) {
-                for(int i=0; i<results.size(); i++){
-                    results.get(i).setRead(true); // 선택된 메시지들 모두 읽음 처리
+                for (Users users : results) {
+                    users.setRead(true);
                 }
             }
         });
+    }
+
+
+    public void showDialog(final RealmResults<Users> results){
+     if(results.size() > 0) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AlertDialogCustom);
+            builder.setTitle("메시지 읽기");
+            builder.setMessage("해당 채팅방의 모든 메시지를 읽어 보시겠습니까?");
+            builder.setPositiveButton("확인",
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            speechSeletedMessage(results);
+                        }
+                    });
+            builder.setNegativeButton("취소",
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+
+                        }
+                    });
+            builder.show();
+        }
     }
 
     // RealmResults<Users> to List<Model> 변환 메소드
