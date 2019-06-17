@@ -15,11 +15,16 @@ import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.ActionMode;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.Toast;
 
 import com.example.wnsvy.kakaonotiread.Adapter.ChatAdapter;
+import com.example.wnsvy.kakaonotiread.Interface.RecyclerViewClickListener;
+import com.example.wnsvy.kakaonotiread.Interface.RecyclerViewTouchListener;
 import com.example.wnsvy.kakaonotiread.Model.Users;
 import com.example.wnsvy.kakaonotiread.R;
 
@@ -33,7 +38,7 @@ import io.realm.Sort;
 
 import static android.speech.tts.TextToSpeech.Engine.KEY_PARAM_VOLUME;
 
-public class ChatActivity extends AppCompatActivity {
+public class ChatActivity extends AppCompatActivity{
 
     private Realm realm;
     public RecyclerView recyclerView;
@@ -74,7 +79,48 @@ public class ChatActivity extends AppCompatActivity {
             }
         }
     };
+    public ActionMode actionMode;
+    public ActionMode.Callback actionModeCallback = new ActionMode.Callback(){
 
+        @Override
+        public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+            MenuInflater menuInflater = mode.getMenuInflater();
+            menuInflater.inflate(R.menu.menu_chat, menu);
+            return true;
+        }
+
+        @Override
+        public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+            return false;
+        }
+
+        @Override
+        public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+            int id = item.getItemId();
+            switch (id){
+                case R.id.action_read:
+                    RealmResults<Users> results = realm.where(Users.class).equalTo("isSelected",true).sort("timeStamp",Sort.DESCENDING).findAll(); // 선택된 메시지 쿼리
+                    speechSeletedMessage(results); // 선택된 메시지 읽기
+                    return  true;
+
+                case R.id.action_pause:
+                    SharedPreferences sharedPreferences = getSharedPreferences("selectMode",MODE_PRIVATE );
+                    boolean isSelectMode = sharedPreferences.getBoolean("isSelectMode",false);
+                    if(isSelectMode) {
+                        speechMessage(""); // 빈 메시지 읽게해서 오디오 포커싱이 바로 미디어로 이동하게 하여 멈춤효과
+                    }
+                    return  true;
+
+                default:
+                    return false;
+            }
+        }
+
+        @Override
+        public void onDestroyActionMode(ActionMode mode) {
+            actionMode = null;
+        }
+    };
 
 
     @Override
@@ -184,6 +230,18 @@ public class ChatActivity extends AppCompatActivity {
             }
         });
 
+        recyclerView.addOnItemTouchListener(new RecyclerViewTouchListener(getApplicationContext(), recyclerView, new RecyclerViewClickListener() {
+            @Override
+            public void onClick(View view, int position) {
+
+            }
+
+            @Override
+            public void onLongClick(View view, int position) {
+                actionMode = startActionMode(actionModeCallback);
+            }
+        }));
+
         RealmResults<Users> unReadAllResults = realm.where(Users.class).equalTo("room",room).equalTo("isRead",false).sort("timeStamp",Sort.DESCENDING).findAll();
         showDialog(unReadAllResults); // 액티비티 진입시 읽지 않은 전체 메시지 읽을지 묻는 다이얼로그 호출
     }
@@ -252,33 +310,6 @@ public class ChatActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_chat, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
-        switch (id){
-            case R.id.action_read:
-                RealmResults<Users> results = realm.where(Users.class).equalTo("isSelected",true).sort("timeStamp",Sort.DESCENDING).findAll(); // 선택된 메시지 쿼리
-                speechSeletedMessage(results); // 선택된 메시지 읽기
-                break;
-            case R.id.action_pause:
-                SharedPreferences sharedPreferences = getSharedPreferences("selectMode",MODE_PRIVATE );
-                boolean isSelectMode = sharedPreferences.getBoolean("isSelectMode",false);
-                if(isSelectMode) {
-                    speechMessage(""); // 빈 메시지 읽게해서 오디오 포커싱이 바로 미디어로 이동하게 하여 멈춤효과
-                }
-                break;
-            default:
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
 
     public void speechMessage(String message){
         Bundle ttsParam = new Bundle();
