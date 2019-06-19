@@ -119,6 +119,7 @@ public class ChatActivity extends AppCompatActivity{
         @Override
         public void onDestroyActionMode(ActionMode mode) {
             actionMode = null;
+            isSelectedReset(); // 액션모드 종료 시 리사이클러뷰 선택모드 함께 종료
         }
     };
 
@@ -230,6 +231,7 @@ public class ChatActivity extends AppCompatActivity{
             }
         });
 
+        // 액션모드 메소드 호출을 위해 리사이클러뷰 아이템 터치 인터페이스상속받은 클래스를 따로 생성하여 액티비티에서 호출
         recyclerView.addOnItemTouchListener(new RecyclerViewTouchListener(getApplicationContext(), recyclerView, new RecyclerViewClickListener() {
             @Override
             public void onClick(View view, int position) {
@@ -238,6 +240,8 @@ public class ChatActivity extends AppCompatActivity{
 
             @Override
             public void onLongClick(View view, int position) {
+                SharedPreferences sharedPreferences = getSharedPreferences("selectMode",MODE_PRIVATE );
+                sharedPreferences.edit().putBoolean("isSelectMode",true).apply(); // 선택모드 설정값 true로 변경
                 actionMode = startActionMode(actionModeCallback);
             }
         }));
@@ -285,9 +289,7 @@ public class ChatActivity extends AppCompatActivity{
     public void onBackPressed() {
         SharedPreferences sharedPreferences = getSharedPreferences("selectMode",MODE_PRIVATE );
         boolean isSelectMode = sharedPreferences.getBoolean("isSelectMode",false);
-        if(isSelectMode){
-            isSelectedReset(); // 선택모드 상태면 선택모드 상태 해제
-        }else{
+        if(!isSelectMode){
             super.onBackPressed(); // 선택모드 상태가 아니면 종료
             finish();
         }

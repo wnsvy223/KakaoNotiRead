@@ -36,7 +36,7 @@ public class ChatAdapter extends RealmRecyclerViewAdapter<Users, ChatAdapter.Vie
     private RealmResults<Users> realmResults;
     private TextToSpeech textToSpeech;
 
-    class ViewHolder extends  RecyclerView.ViewHolder implements View.OnClickListener, View.OnLongClickListener{
+    class ViewHolder extends  RecyclerView.ViewHolder implements View.OnClickListener{
 
         private TextView userId;
         private TextView message;
@@ -52,7 +52,6 @@ public class ChatAdapter extends RealmRecyclerViewAdapter<Users, ChatAdapter.Vie
             circleImageView = itemView.findViewById(R.id.ivUser);
             isRead = itemView.findViewById(R.id.isRead);
             itemView.setOnClickListener(this);
-            itemView.setOnLongClickListener(this);
         }
 
         @Override
@@ -98,13 +97,6 @@ public class ChatAdapter extends RealmRecyclerViewAdapter<Users, ChatAdapter.Vie
             }
         }
 
-        @Override
-        public boolean onLongClick(View v) {
-            itemView.setBackgroundColor(ContextCompat.getColor(context, android.R.color.darker_gray)); // 선택된 행 회색 하이라이트 처리
-            SharedPreferences sharedPreferences = context.getSharedPreferences("selectMode",MODE_PRIVATE );
-            sharedPreferences.edit().putBoolean("isSelectMode",true).apply(); // 선택모드 설정값 true로 변경
-            return false;
-        }
     }
 
     public ChatAdapter(@Nullable RealmResults<Users> data, boolean autoUpdate, Context context, TextToSpeech textToSpeech) {
