@@ -147,6 +147,6 @@ public class MessageAdapter extends RealmRecyclerViewAdapter<Users, MessageAdapt
 
     @Override
     public long getItemId(int position) {
-        return getItem(position).hashCode();
+        return super.getItemId(position);
     }
 }
